@@ -1,14 +1,14 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import * as WebBrowser from 'expo-web-browser';
+import { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
 // Allowed Discord roles for task management
-const ALLOWED_ROLES = ['crew', 'volunteer', 'admin', 'alumni'];
+const ALLOWED_ROLES = ['crew2', 'volunteer2'];
 
 interface DiscordUserMetadata {
   avatar?: string;
@@ -67,32 +67,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user's Discord roles from Supabase Edge Function
   const fetchUserRoles = async (userId: string) => {
     try {
-      // Get the current session to ensure we have a valid token
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log('Current session exists:', !!currentSession);
-      console.log('Access token exists:', !!currentSession?.access_token);
 
       if (!currentSession?.access_token) {
         console.error('No access token available');
         return [];
       }
 
-      // Explicitly pass the Authorization header
-      const { data, error } = await supabase.functions.invoke('get-discord-roles', {
-        body: { userId },
+      const functionUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/get-discord-roles`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${currentSession.access_token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`,
+          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
         },
+        body: JSON.stringify({ userId }),
       });
 
-      if (error) {
-        console.error('Error fetching Discord roles:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('Error fetching Discord roles:', responseData);
         return [];
       }
 
-      console.log('Discord roles fetched successfully:', data);
-      return data?.roles || [];
+      return responseData?.roles || [];
     } catch (error) {
       console.error('Error fetching Discord roles:', error);
       return [];
@@ -108,13 +108,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        // Fetch roles when user is authenticated
         fetchUserRoles(session.user.id).then(roles => {
           setUserRoles(roles);
           setHasRequiredRole(checkRequiredRole(roles));
@@ -123,16 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setLoading(false);
       }
+    }).catch(err => {
+      console.error('Error getting initial session:', err);
+      setLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Fetch roles when user signs in
           const roles = await fetchUserRoles(session.user.id);
           setUserRoles(roles);
           setHasRequiredRole(checkRequiredRole(roles));
@@ -151,9 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithDiscord = async () => {
-    // Create the redirect URL - this is where Supabase will redirect after OAuth
     const redirectUrl = Linking.createURL('/');
-    console.log('Redirect URL:', redirectUrl);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
@@ -167,7 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       console.error('Error signing in with Discord:', error);
 
-      // Check for Chrome extension interference
       if (error.message?.includes('chrome-extension') || error.message?.includes('Unauthorized request')) {
         throw new Error(
           'Browser extension blocking OAuth. Please:\n' +
@@ -180,32 +176,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
 
-    console.log('OAuth URL:', data?.url);
-
     // For mobile, open the OAuth URL in a browser
     if (Platform.OS !== 'web' && data?.url) {
-      const result = await WebBrowser.openAuthSessionAsync(
-        data.url,
-        redirectUrl
-      );
-
-      console.log('WebBrowser result:', result);
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
       if (result.type === 'success') {
-        const { url } = result;
-        console.log('Callback URL:', url);
-
-        // The URL contains the session tokens from Supabase
-        // We need to extract them and set the session
-        const urlParams = new URL(url);
+        const urlParams = new URL(result.url);
         const accessToken = urlParams.searchParams.get('access_token');
         const refreshToken = urlParams.searchParams.get('refresh_token');
 
-        console.log('Access token found:', !!accessToken);
-        console.log('Refresh token found:', !!refreshToken);
-
         if (accessToken && refreshToken) {
-          // Set the session using the tokens from the callback
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -215,8 +195,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error setting session:', sessionError);
             throw sessionError;
           }
-
-          console.log('Session set successfully');
         } else {
           console.error('No tokens found in callback URL');
           throw new Error('No authentication tokens received');
@@ -224,7 +202,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (result.type === 'cancel') {
         throw new Error('Authentication cancelled');
       } else {
-        console.error('Unexpected result type:', result.type);
         throw new Error('Authentication failed');
       }
     }

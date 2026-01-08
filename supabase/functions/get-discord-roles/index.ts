@@ -21,10 +21,6 @@ interface DiscordGuildMember {
   };
 }
 
-interface DiscordGuild {
-  roles: DiscordRole[];
-}
-
 serve(async (req) => {
   try {
     // CORS headers
@@ -37,8 +33,8 @@ serve(async (req) => {
       });
     }
 
-    // Verify authentication
     const authHeader = req.headers.get('Authorization');
+
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
@@ -46,10 +42,12 @@ serve(async (req) => {
       });
     }
 
-    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl ?? '',
+      supabaseAnonKey ?? '',
       {
         global: {
           headers: { Authorization: authHeader },
@@ -57,14 +55,17 @@ serve(async (req) => {
       }
     );
 
-    // Get the authenticated user
     const {
       data: { user },
       error: userError,
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      console.error('User verification failed:', userError?.message || 'No user found');
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        details: userError?.message || 'No user found'
+      }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });

@@ -16,10 +16,7 @@ export default function LoginScreen() {
   const handleDiscordLogin = async () => {
     try {
       setLoading(true);
-      console.log('Starting Discord login...');
       await signInWithDiscord();
-      console.log('Discord login completed');
-      // Navigation is handled by auth state change in AuthProvider
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign in with Discord. Please try again.';
