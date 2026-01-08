@@ -29,7 +29,7 @@ interface CrewTask {
 
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { hasRequiredRole, userRoles } = useAuth();
+  const { hasRequiredRole } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
@@ -225,19 +225,10 @@ export default function EventDetails() {
         ) : (
           <View style={styles.section}>
             <View style={styles.unauthorizedContainer}>
-              <Text style={styles.unauthorizedIcon}>🔒</Text>
-              <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
+              <Text style={styles.unauthorizedIcon}>😊</Text>
               <Text style={styles.unauthorizedText}>
-                You need one of the following Discord roles to manage crew tasks:
+                Want to help out with our events? Reach out to us on Discord to learn about volunteering!
               </Text>
-              <Text style={styles.unauthorizedRoles}>
-                crew • volunteer • admin • alumni
-              </Text>
-              {userRoles.length > 0 && (
-                <Text style={styles.unauthorizedCurrentRoles}>
-                  Your current roles: {userRoles.join(', ')}
-                </Text>
-              )}
             </View>
           </View>
         )}
@@ -542,18 +533,11 @@ const styles = StyleSheet.create({
   },
   unauthorizedContainer: {
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 24,
     paddingHorizontal: 20,
   },
   unauthorizedIcon: {
     fontSize: 48,
-    marginBottom: 16,
-  },
-  unauthorizedTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
-    fontFamily: 'microknight',
     marginBottom: 12,
   },
   unauthorizedText: {
@@ -561,21 +545,6 @@ const styles = StyleSheet.create({
     color: '#8e8e93',
     fontFamily: 'microknight',
     textAlign: 'center',
-    marginBottom: 12,
     lineHeight: 20,
-  },
-  unauthorizedRoles: {
-    fontSize: 16,
-    color: '#5865F2',
-    fontFamily: 'microknight',
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  unauthorizedCurrentRoles: {
-    fontSize: 12,
-    color: '#8e8e93',
-    fontFamily: 'microknight',
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
 });
