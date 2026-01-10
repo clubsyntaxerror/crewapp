@@ -1,7 +1,10 @@
-import crewTasksData from '@/lib/crew-tasks.json';
-import { fetchEvents } from '@/lib/google-sheets';
+import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { openMapLocation } from '@/lib/maps';
-import { Event } from '@/lib/types';
+import { Event, CrewTask } from '@/lib/types';
+import {
+  fetchUserEventTaskAssignments,
+  saveUserTaskAssignments,
+} from '@/lib/task-assignments';
 import { format } from 'date-fns';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -21,12 +24,6 @@ interface TaskItem {
   completed: boolean;
 }
 
-interface CrewTask {
-  id: string;
-  label: string;
-  description?: string;
-}
-
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { hasRequiredRole } = useAuth();
@@ -34,10 +31,15 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
   const [assignedTasks, setAssignedTasks] = useState<Set<string>>(new Set());
-
-  const crewTasks: CrewTask[] = crewTasksData;
+  const [crewTasks, setCrewTasks] = useState<CrewTask[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const toggleTask = (taskId: string) => {
+    if (!event) return;
+    const isPast = event.endDate.getTime() < Date.now();
+    if (isPast) return;
+
     setAssignedTasks((prev) => {
       const newSet = new Set(prev);
       const absentTaskId = crewTasks[crewTasks.length - 1]?.id;
@@ -63,6 +65,9 @@ export default function EventDetails() {
         }
       }
 
+      // Auto-save after state update
+      saveAssignments(newSet);
+
       return newSet;
     });
   };
@@ -76,10 +81,55 @@ export default function EventDetails() {
       const events = await fetchEvents();
       const found = events.find((e) => e.eventId === id);
       setEvent(found || null);
+
+      if (found) {
+        // Load task list for this event
+        const tasks = await fetchTaskList(found.taskListName);
+        setCrewTasks(tasks);
+
+        // Load user's saved task assignments
+        try {
+          const savedAssignments = await fetchUserEventTaskAssignments(found.eventId);
+          const savedTaskIds = new Set(savedAssignments.map((a) => a.task_id));
+          setAssignedTasks(savedTaskIds);
+        } catch (error) {
+          console.error('Error loading saved task assignments:', error);
+          // Don't fail the whole load if assignments fail
+        }
+      }
     } catch (error) {
       console.error('Error loading event:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveAssignments = async (taskSet: Set<string>) => {
+    if (!event) return;
+
+    setSaveStatus('saving');
+    setSaveError(null);
+
+    try {
+      // Get the selected tasks (with full details)
+      const selectedTasks = crewTasks.filter((task) => taskSet.has(task.id));
+
+      // Save to Supabase
+      await saveUserTaskAssignments(
+        event.eventId,
+        event.taskListName || 'H62',
+        selectedTasks
+      );
+
+      setSaveStatus('saved');
+      // Clear "saved" status after 2 seconds
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Error saving task assignments:', error);
+      setSaveStatus('error');
+      setSaveError('Failed to save. Please try again.');
+      // Clear error status after 5 seconds
+      setTimeout(() => setSaveStatus('idle'), 5000);
     }
   };
 
@@ -221,6 +271,31 @@ export default function EventDetails() {
                 </Pressable>
               );
             })}
+
+            {!isPastEvent && (
+              <View style={styles.statusContainer}>
+                {saveStatus === 'saving' && (
+                  <View style={styles.statusBadge}>
+                    <ActivityIndicator size="small" color="#8e8e93" />
+                    <Text style={styles.statusText}>Saving...</Text>
+                  </View>
+                )}
+                {saveStatus === 'saved' && (
+                  <View style={[styles.statusBadge, styles.statusBadgeSuccess]}>
+                    <Text style={styles.statusIcon}>✓</Text>
+                    <Text style={[styles.statusText, styles.statusTextSuccess]}>Saved</Text>
+                  </View>
+                )}
+                {saveStatus === 'error' && (
+                  <View style={[styles.statusBadge, styles.statusBadgeError]}>
+                    <Text style={styles.statusIcon}>!</Text>
+                    <Text style={[styles.statusText, styles.statusTextError]}>
+                      {saveError || 'Error saving'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         ) : (
           <View style={styles.section}>
@@ -530,6 +605,42 @@ const styles = StyleSheet.create({
   },
   crewTaskTextDisabled: {
     color: '#8e8e93',
+  },
+  statusContainer: {
+    marginTop: 12,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#2c2c2e',
+  },
+  statusBadgeSuccess: {
+    backgroundColor: 'rgba(48, 209, 88, 0.15)',
+  },
+  statusBadgeError: {
+    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+  },
+  statusIcon: {
+    fontSize: 14,
+    marginRight: 6,
+    fontFamily: 'microknight',
+  },
+  statusText: {
+    fontSize: 12,
+    color: '#8e8e93',
+    fontFamily: 'microknight',
+  },
+  statusTextSuccess: {
+    color: '#30d158',
+  },
+  statusTextError: {
+    color: '#ff453a',
   },
   unauthorizedContainer: {
     alignItems: 'center',

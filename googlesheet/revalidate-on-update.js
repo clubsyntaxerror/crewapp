@@ -9,7 +9,7 @@ function revalidateWebSite(event) {
 
       // Skip header row
       if (row > 1) {
-        const eventIdColumn = 15; // (O = 15)
+        const eventIdColumn = 16; // (P = 16) - moved from O
         const eventIdCell = sheet.getRange(row, eventIdColumn);
         const startDateCell = sheet.getRange(row, 1); // EventStartDateAndTime
 

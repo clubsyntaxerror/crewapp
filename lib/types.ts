@@ -14,6 +14,7 @@ export interface Event {
   hideFromHero?: boolean;
   payingGuests?: number;
   nonPayingGuests?: number;
+  taskListName?: string;
 }
 
 export interface SheetRow {
@@ -31,5 +32,12 @@ export interface SheetRow {
   OptionalHideFromHero: string;
   OptionalPayingGuests: string;
   OptionalNonPayingGuests: string;
+  OptionalTaskListName: string;
   EventId: string;
+}
+
+export interface CrewTask {
+  id: string;
+  label: string;
+  description?: string;
 }
