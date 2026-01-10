@@ -1,10 +1,11 @@
+import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { openMapLocation } from '@/lib/maps';
-import { Event, CrewTask } from '@/lib/types';
 import {
   fetchUserEventTaskAssignments,
   saveUserTaskAssignments,
 } from '@/lib/task-assignments';
+import { CrewTask, Event } from '@/lib/types';
 import { format } from 'date-fns';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -17,7 +18,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface TaskItem {
   label: string;
@@ -104,6 +104,57 @@ export default function EventDetails() {
     }
   };
 
+  const getCommitmentEmoji = () => {
+    const absentTaskId = crewTasks[crewTasks.length - 1]?.id;
+    const isAbsent = assignedTasks.has(absentTaskId);
+
+    if (isAbsent) {
+      return '😢'; // Sad - marked as absent
+    }
+
+    // Count non-absent tasks
+    const totalTasks = crewTasks.length - 1; // Exclude absent
+    const selectedCount = Array.from(assignedTasks).filter(
+      (taskId) => taskId !== absentTaskId
+    ).length;
+
+    if (selectedCount === 0) {
+      return ''; // No emoji when nothing selected
+    }
+
+    // If task list has <= 4 tasks, show happiest emoji when all are checked
+    if (totalTasks <= 4) {
+      if (selectedCount === totalTasks) {
+        return '🤩'; // All tasks - super excited!
+      } else if (selectedCount === 3) {
+        return '😄'; // 3 tasks - very happy
+      } else if (selectedCount === 2) {
+        return '😊'; // 2 tasks - happy
+      } else {
+        return '🙂'; // 1 task - appreciated!
+      }
+    }
+
+    // For task lists with > 4 tasks, add wild emojis for overachievers
+    if (selectedCount >= 8) {
+      return '💫'; // 8+ tasks - LEGENDARY WIZARD!
+    } else if (selectedCount >= 7) {
+      return '🖖'; // 7 tasks - MAGICAL UNICORN!
+    } else if (selectedCount >= 6) {
+      return '🧙'; // 6 tasks - ROCKSTAR!
+    } else if (selectedCount >= 5) {
+      return '🦄'; // 5 tasks - SUPERSTAR!
+    } else if (selectedCount === 4) {
+      return '🤩'; // 4 tasks - super excited!
+    } else if (selectedCount === 3) {
+      return '😄'; // 3 tasks - very happy
+    } else if (selectedCount === 2) {
+      return '😊'; // 2 tasks - happy
+    } else {
+      return '🙂'; // 1 task - appreciated!
+    }
+  };
+
   const saveAssignments = async (taskSet: Set<string>) => {
     if (!event) return;
 
@@ -114,11 +165,13 @@ export default function EventDetails() {
       // Get the selected tasks (with full details)
       const selectedTasks = crewTasks.filter((task) => taskSet.has(task.id));
 
-      // Save to Supabase
+      // Save to Supabase with event context
       await saveUserTaskAssignments(
         event.eventId,
         event.taskListName || 'H62',
-        selectedTasks
+        selectedTasks,
+        event.title,
+        event.startDate
       );
 
       setSaveStatus('saved');
@@ -274,6 +327,12 @@ export default function EventDetails() {
 
             {!isPastEvent && (
               <View style={styles.statusContainer}>
+                {/* Commitment emoji - always visible when tasks are selected */}
+                {getCommitmentEmoji() && (
+                  <Text style={styles.commitmentEmoji}>{getCommitmentEmoji()}</Text>
+                )}
+
+                {/* Save status indicators */}
                 {saveStatus === 'saving' && (
                   <View style={styles.statusBadge}>
                     <ActivityIndicator size="small" color="#8e8e93" />
@@ -611,6 +670,11 @@ const styles = StyleSheet.create({
     minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+  },
+  commitmentEmoji: {
+    fontSize: 32,
+    marginBottom: 4,
   },
   statusBadge: {
     flexDirection: 'row',

@@ -5,6 +5,8 @@ export interface TaskAssignment {
   id: string;
   user_id: string;
   event_id: string;
+  event_title?: string;
+  event_date?: string;
   task_list_name: string;
   task_id: string;
   task_label: string;
@@ -68,7 +70,9 @@ export async function fetchUserEventTaskAssignments(
 export async function saveUserTaskAssignments(
   eventId: string,
   taskListName: string,
-  tasks: CrewTask[]
+  tasks: CrewTask[],
+  eventTitle?: string,
+  eventDate?: Date
 ): Promise<void> {
   const {
     data: { user },
@@ -96,6 +100,8 @@ export async function saveUserTaskAssignments(
     const assignments = tasks.map((task) => ({
       user_id: user.id,
       event_id: eventId,
+      event_title: eventTitle,
+      event_date: eventDate ? eventDate.toISOString().split('T')[0] : undefined,
       task_list_name: taskListName,
       task_id: task.id,
       task_label: task.label,
