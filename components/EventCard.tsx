@@ -1,9 +1,9 @@
-import { Pressable, Text, StyleSheet, View } from 'react-native';
+import { EventSignupStats, getEventSignupStats } from '@/lib/task-assignments';
+import { Event } from '@/lib/types';
 import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
-import { Event } from '@/lib/types';
 import { useEffect, useState } from 'react';
-import { getEventSignupStats, EventSignupStats } from '@/lib/task-assignments';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface EventCardProps {
   event: Event;
@@ -51,13 +51,13 @@ export function EventCard({ event }: EventCardProps) {
           <View style={styles.statsInfo}>
             {stats.participating > 0 && (
               <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>✅</Text>
+                <Text style={styles.statEmoji}>💪</Text>
                 <Text style={styles.statNumber}>{stats.participating}</Text>
               </View>
             )}
             {stats.absent > 0 && (
               <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>😢</Text>
+                <Text style={styles.statEmoji}>🏝️</Text>
                 <Text style={styles.statNumber}>{stats.absent}</Text>
               </View>
             )}

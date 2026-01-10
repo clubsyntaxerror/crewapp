@@ -327,12 +327,12 @@ export default function EventDetails() {
 
             {!isPastEvent && (
               <View style={styles.statusContainer}>
-                {/* Commitment emoji - always visible when tasks are selected */}
+                {/* Commitment emoji centered */}
                 {getCommitmentEmoji() && (
                   <Text style={styles.commitmentEmoji}>{getCommitmentEmoji()}</Text>
                 )}
 
-                {/* Save status indicators */}
+                {/* Save status indicators on the right */}
                 {saveStatus === 'saving' && (
                   <View style={styles.statusBadge}>
                     <ActivityIndicator size="small" color="#8e8e93" />
@@ -670,13 +670,14 @@ const styles = StyleSheet.create({
     minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    position: 'relative',
   },
   commitmentEmoji: {
     fontSize: 32,
-    marginBottom: 4,
   },
   statusBadge: {
+    position: 'absolute',
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,
