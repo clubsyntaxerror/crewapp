@@ -1,7 +1,9 @@
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet, View } from 'react-native';
 import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
 import { Event } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import { getEventSignupStats, EventSignupStats } from '@/lib/task-assignments';
 
 interface EventCardProps {
   event: Event;
@@ -9,8 +11,22 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   const router = useRouter();
+  const [stats, setStats] = useState<EventSignupStats | null>(null);
   const startDate = format(event.startDate, 'MMM dd, yyyy');
-  const startTime = format(event.startDate, 'HH:mm');
+
+  useEffect(() => {
+    loadStats();
+  }, [event.eventId]);
+
+  const loadStats = async () => {
+    try {
+      const eventStats = await getEventSignupStats(event.eventId);
+      setStats(eventStats);
+    } catch (error) {
+      console.error('Error loading event stats:', error);
+      // Don't block rendering if stats fail to load
+    }
+  };
 
   const handlePress = () => {
     router.push({
@@ -24,11 +40,30 @@ export function EventCard({ event }: EventCardProps) {
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={handlePress}
     >
-      <Text style={styles.title}>{event.title}</Text>
-      <Text style={styles.date}>{startDate}</Text>
-      <Text style={styles.venue}>{event.venueName}</Text>
-      <Text style={styles.time}>{startTime}</Text>
-      {event.coverFee && <Text style={styles.coverFee}>{event.coverFee}</Text>}
+      <View style={styles.cardContent}>
+        <View style={styles.mainInfo}>
+          <Text style={styles.title}>{event.title}</Text>
+          <Text style={styles.date}>{startDate}</Text>
+          <Text style={styles.venue}>{event.venueName}</Text>
+        </View>
+
+        {stats && stats.total > 0 && (
+          <View style={styles.statsInfo}>
+            {stats.participating > 0 && (
+              <View style={styles.statItem}>
+                <Text style={styles.statEmoji}>✅</Text>
+                <Text style={styles.statNumber}>{stats.participating}</Text>
+              </View>
+            )}
+            {stats.absent > 0 && (
+              <View style={styles.statItem}>
+                <Text style={styles.statEmoji}>😢</Text>
+                <Text style={styles.statNumber}>{stats.absent}</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
     </Pressable>
   );
 }
@@ -49,6 +84,32 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
   },
+  cardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  mainInfo: {
+    flex: 1,
+  },
+  statsInfo: {
+    marginLeft: 16,
+    gap: 8,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statEmoji: {
+    fontSize: 16,
+  },
+  statNumber: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    fontFamily: 'microknight',
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
@@ -65,18 +126,6 @@ const styles = StyleSheet.create({
   venue: {
     fontSize: 16,
     color: '#e5e5ea',
-    marginBottom: 2,
-    fontFamily: 'microknight',
-  },
-  time: {
-    fontSize: 14,
-    color: '#8e8e93',
-    fontFamily: 'microknight',
-  },
-  coverFee: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#8e8e93',
     fontFamily: 'microknight',
   },
 });

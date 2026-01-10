@@ -141,3 +141,52 @@ export async function getEventTaskSummary(
 
   return summary;
 }
+
+export interface EventSignupStats {
+  participating: number; // Users with at least one non-absent task
+  absent: number; // Users marked as absent
+  total: number; // Total unique users who responded
+}
+
+/**
+ * Get signup statistics for an event
+ * Returns count of participating crew vs absent crew
+ */
+export async function getEventSignupStats(
+  eventId: string
+): Promise<EventSignupStats> {
+  const assignments = await fetchEventTaskAssignments(eventId);
+
+  // Group assignments by user
+  const userAssignments = new Map<string, Set<string>>();
+
+  for (const assignment of assignments) {
+    if (!userAssignments.has(assignment.user_id)) {
+      userAssignments.set(assignment.user_id, new Set());
+    }
+    userAssignments.get(assignment.user_id)!.add(assignment.task_id);
+  }
+
+  let participating = 0;
+  let absent = 0;
+
+  // Count users based on their task selections
+  for (const taskIds of userAssignments.values()) {
+    const hasAbsent = taskIds.has('absent');
+    const hasOtherTasks = Array.from(taskIds).some((id) => id !== 'absent');
+
+    if (hasAbsent && !hasOtherTasks) {
+      // User only has absent task
+      absent++;
+    } else if (hasOtherTasks) {
+      // User has at least one non-absent task
+      participating++;
+    }
+  }
+
+  return {
+    participating,
+    absent,
+    total: userAssignments.size,
+  };
+}
