@@ -439,19 +439,21 @@ export default function EventDetails() {
           </View>
         )}
 
-        <Pressable
-          style={styles.detailsToggle}
-          onPress={() => setShowDetails(!showDetails)}
-        >
-          <Text style={styles.detailsToggleText}>
-            {showDetails ? 'Hide Event Details' : 'Show Event Details'}
-          </Text>
-          <Text style={styles.detailsToggleIcon}>
-            {showDetails ? '▼' : '▶'}
-          </Text>
-        </Pressable>
+        {hasRequiredRole && (
+          <Pressable
+            style={styles.detailsToggle}
+            onPress={() => setShowDetails(!showDetails)}
+          >
+            <Text style={styles.detailsToggleText}>
+              {showDetails ? 'Hide Event Details' : 'Show Event Details'}
+            </Text>
+            <Text style={styles.detailsToggleIcon}>
+              {showDetails ? '▼' : '▶'}
+            </Text>
+          </Pressable>
+        )}
 
-        {showDetails && (
+        {(showDetails || !hasRequiredRole) && (
           <>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Venue</Text>
