@@ -11,6 +11,7 @@ export interface TaskAssignment {
   task_id: string;
   task_label: string;
   task_description?: string;
+  username?: string;
   created_at: string;
   updated_at: string;
 }
@@ -72,7 +73,8 @@ export async function saveUserTaskAssignments(
   taskListName: string,
   tasks: CrewTask[],
   eventTitle?: string,
-  eventDate?: Date
+  eventDate?: Date,
+  username?: string
 ): Promise<void> {
   const {
     data: { user },
@@ -106,6 +108,7 @@ export async function saveUserTaskAssignments(
       task_id: task.id,
       task_label: task.label,
       task_description: task.description,
+      username: username,
     }));
 
     const { error: insertError } = await supabase

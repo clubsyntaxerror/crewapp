@@ -2,8 +2,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { openMapLocation } from '@/lib/maps';
 import {
+  fetchEventTaskAssignments,
   fetchUserEventTaskAssignments,
   saveUserTaskAssignments,
+  TaskAssignment,
 } from '@/lib/task-assignments';
 import { CrewTask, Event } from '@/lib/types';
 import { format } from 'date-fns';
@@ -26,7 +28,7 @@ interface TaskItem {
 
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { hasRequiredRole } = useAuth();
+  const { hasRequiredRole, discordUsername } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
@@ -34,6 +36,17 @@ export default function EventDetails() {
   const [crewTasks, setCrewTasks] = useState<CrewTask[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [allAssignments, setAllAssignments] = useState<TaskAssignment[]>([]);
+
+  // Get usernames for a specific task
+  const getUsernamesForTask = (taskId: string): string[] => {
+    const usernames = allAssignments
+      .filter((a) => a.task_id === taskId && a.username)
+      .map((a) => a.username!);
+
+    // Remove duplicates
+    return [...new Set(usernames)];
+  };
 
   const toggleTask = (taskId: string) => {
     if (!event) return;
@@ -95,6 +108,14 @@ export default function EventDetails() {
         } catch (error) {
           console.error('Error loading saved task assignments:', error);
           // Don't fail the whole load if assignments fail
+        }
+
+        // Load all assignments for this event to show who's doing what
+        try {
+          const eventAssignments = await fetchEventTaskAssignments(found.eventId);
+          setAllAssignments(eventAssignments);
+        } catch (error) {
+          console.error('Error loading event assignments:', error);
         }
       }
     } catch (error) {
@@ -171,8 +192,13 @@ export default function EventDetails() {
         event.taskListName || 'H62',
         selectedTasks,
         event.title,
-        event.startDate
+        event.startDate,
+        discordUsername || undefined
       );
+
+      // Reload all assignments to update the display
+      const eventAssignments = await fetchEventTaskAssignments(event.eventId);
+      setAllAssignments(eventAssignments);
 
       setSaveStatus('saved');
       // Clear "saved" status after 2 seconds
@@ -285,6 +311,7 @@ export default function EventDetails() {
               const isAbsentTask = index === crewTasks.length - 1;
               const isAbsentChecked = assignedTasks.has(crewTasks[crewTasks.length - 1]?.id);
               const isDisabled = isPastEvent || (!isAbsentTask && isAbsentChecked);
+              const usernames = getUsernamesForTask(task.id);
 
               return (
                 <Pressable
@@ -318,6 +345,22 @@ export default function EventDetails() {
                         isDisabled && styles.crewTaskTextDisabled
                       ]}>
                         {task.description}
+                      </Text>
+                    )}
+                    {usernames.length > 0 && (
+                      <Text style={styles.crewTaskUsernamesContainer}>
+                        {usernames.map((username, idx) => (
+                          <Text
+                            key={idx}
+                            style={[
+                              styles.crewTaskUsername,
+                              username === discordUsername && styles.crewTaskUsernameOwn,
+                              isDisabled && styles.crewTaskTextDisabled
+                            ]}
+                          >
+                            {username}{idx < usernames.length - 1 ? ', ' : ''}
+                          </Text>
+                        ))}
                       </Text>
                     )}
                   </View>
@@ -655,6 +698,18 @@ const styles = StyleSheet.create({
     color: '#8e8e93',
     fontFamily: 'microknight',
     marginTop: 2,
+  },
+  crewTaskUsernamesContainer: {
+    marginTop: 4,
+  },
+  crewTaskUsername: {
+    fontSize: 11,
+    color: '#ff9f0a',
+    fontFamily: 'microknight',
+    fontStyle: 'italic',
+  },
+  crewTaskUsernameOwn: {
+    color: '#0a84ff',
   },
   crewTaskItemDisabled: {
     opacity: 0.4,
