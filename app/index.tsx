@@ -1,11 +1,11 @@
 import { EventCard } from '@/components/EventCard';
+import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, isFutureEvent, isPastEvent } from '@/lib/google-sheets';
 import { supabase } from '@/lib/supabase';
 import { Event } from '@/lib/types';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View, Pressable, Modal, TouchableWithoutFeedback, Image, Alert } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 
 type FilterType = 'upcoming' | 'past' | 'all';
 
@@ -24,6 +24,10 @@ export default function Index() {
     if (filter === 'past') return isPastEvent(event);
     return true; // 'all'
   });
+
+  // For upcoming events, separate next event from future events
+  const nextEvent = filter === 'upcoming' && filteredEvents.length > 0 ? filteredEvents[0] : null;
+  const futureEvents = filter === 'upcoming' && filteredEvents.length > 1 ? filteredEvents.slice(1) : null;
 
   const handleFilterSelect = (selectedFilter: FilterType) => {
     setFilter(selectedFilter);
@@ -134,15 +138,35 @@ export default function Index() {
         }}
       />
       <View style={styles.container}>
-        <FlatList
-          data={filteredEvents}
-          keyExtractor={(item) => item.eventId}
-          renderItem={({ item }) => <EventCard event={item} refreshTrigger={statsRefreshTrigger} />}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <Text style={styles.empty}>No events scheduled</Text>
-          }
-        />
+        {filter === 'upcoming' && (nextEvent || futureEvents) ? (
+          <ScrollView contentContainerStyle={styles.list}>
+            {nextEvent && (
+              <View>
+                <Text style={styles.sectionHeader}>Upcoming event</Text>
+                <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} />
+              </View>
+            )}
+
+            {futureEvents && futureEvents.length > 0 && (
+              <View style={styles.futureEventsSection}>
+                <Text style={styles.sectionHeader}>Future events</Text>
+                {futureEvents.map((event) => (
+                  <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} />
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        ) : (
+          <FlatList
+            data={filteredEvents}
+            keyExtractor={(item) => item.eventId}
+            renderItem={({ item }) => <EventCard event={item} refreshTrigger={statsRefreshTrigger} />}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <Text style={styles.empty}>No events scheduled</Text>
+            }
+          />
+        )}
       </View>
 
       <Modal
@@ -283,6 +307,18 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0a84ff',
+    fontFamily: 'microknight',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  futureEventsSection: {
+    marginTop: 32,
   },
   empty: {
     textAlign: 'center',
