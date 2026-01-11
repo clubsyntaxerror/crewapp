@@ -1,5 +1,6 @@
 import { EventCard } from '@/components/EventCard';
 import { fetchEvents, isFutureEvent, isPastEvent } from '@/lib/google-sheets';
+import { supabase } from '@/lib/supabase';
 import { Event } from '@/lib/types';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ export default function Index() {
   const [filter, setFilter] = useState<FilterType>('upcoming');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
   const filteredEvents = events.filter((event) => {
     if (filter === 'upcoming') return isFutureEvent(event);
@@ -40,6 +42,32 @@ export default function Index() {
 
   useEffect(() => {
     loadEvents();
+  }, []);
+
+  // Set up real-time subscription for task assignments across all events
+  useEffect(() => {
+    // Subscribe to changes in task_assignments table
+    const channel = supabase
+      .channel('task_assignments_global')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'task_assignments',
+        },
+        (payload) => {
+          console.log('Real-time stats update received:', payload);
+          // Trigger a refresh of all event card stats
+          setStatsRefreshTrigger((prev) => prev + 1);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadEvents = async () => {
@@ -109,7 +137,7 @@ export default function Index() {
         <FlatList
           data={filteredEvents}
           keyExtractor={(item) => item.eventId}
-          renderItem={({ item }) => <EventCard event={item} />}
+          renderItem={({ item }) => <EventCard event={item} refreshTrigger={statsRefreshTrigger} />}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={styles.empty}>No events scheduled</Text>

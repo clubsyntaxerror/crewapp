@@ -7,16 +7,17 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface EventCardProps {
   event: Event;
+  refreshTrigger?: number;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, refreshTrigger }: EventCardProps) {
   const router = useRouter();
   const [stats, setStats] = useState<EventSignupStats | null>(null);
   const startDate = format(event.startDate, 'MMM dd, yyyy');
 
   useEffect(() => {
     loadStats();
-  }, [event.eventId]);
+  }, [event.eventId, refreshTrigger]);
 
   const loadStats = async () => {
     try {

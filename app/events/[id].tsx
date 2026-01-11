@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { openMapLocation } from '@/lib/maps';
+import { supabase } from '@/lib/supabase';
 import {
   fetchEventTaskAssignments,
   fetchUserEventTaskAssignments,
@@ -88,6 +89,41 @@ export default function EventDetails() {
   useEffect(() => {
     loadEvent();
   }, [id]);
+
+  // Set up real-time subscription for task assignments
+  useEffect(() => {
+    if (!event?.eventId) return;
+
+    // Subscribe to changes in task_assignments for this event
+    const channel = supabase
+      .channel(`task_assignments:${event.eventId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'task_assignments',
+          filter: `event_id=eq.${event.eventId}`,
+        },
+        async (payload) => {
+          console.log('Real-time update received:', payload);
+
+          // Reload all assignments to update the display
+          try {
+            const eventAssignments = await fetchEventTaskAssignments(event.eventId);
+            setAllAssignments(eventAssignments);
+          } catch (error) {
+            console.error('Error reloading assignments after real-time update:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [event?.eventId]);
 
   const loadEvent = async () => {
     try {
