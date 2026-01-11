@@ -41,3 +41,37 @@ export const COMMITMENT_EMOJIS = {
   SUPERSTAR: '🖖',      // 5 tasks
   SATISFIED: '😌',      // 4 tasks on large list
 } as const;
+
+/**
+ * Emoji progression lookup tables
+ * Declarative configuration for commitment emoji selection
+ */
+interface EmojiTier {
+  min: number;
+  max: number;
+  emoji: string;
+}
+
+export const EMOJI_PROGRESSION = {
+  // Small lists (1-4 tasks) - simpler progression
+  small: [
+    { min: 0, max: 0, emoji: '' },
+    { min: 1, max: 1, emoji: COMMITMENT_EMOJIS.APPRECIATED },
+    { min: 2, max: 2, emoji: COMMITMENT_EMOJIS.HAPPY },
+    { min: 3, max: 3, emoji: COMMITMENT_EMOJIS.VERY_HAPPY },
+    { min: 4, max: Infinity, emoji: COMMITMENT_EMOJIS.SUPERHAPPY }, // All tasks = superhappy
+  ] as EmojiTier[],
+
+  // Large lists (5+ tasks) - overachiever progression
+  large: [
+    { min: 0, max: 0, emoji: '' },
+    { min: 1, max: 1, emoji: COMMITMENT_EMOJIS.APPRECIATED },
+    { min: 2, max: 2, emoji: COMMITMENT_EMOJIS.HAPPY },
+    { min: 3, max: 3, emoji: COMMITMENT_EMOJIS.VERY_HAPPY },
+    { min: 4, max: 4, emoji: COMMITMENT_EMOJIS.SATISFIED },
+    { min: 5, max: 5, emoji: COMMITMENT_EMOJIS.SUPERSTAR },
+    { min: 6, max: 6, emoji: COMMITMENT_EMOJIS.ROCKSTAR },
+    { min: 7, max: 7, emoji: COMMITMENT_EMOJIS.UNICORN },
+    { min: 8, max: Infinity, emoji: COMMITMENT_EMOJIS.WIZARD },
+  ] as EmojiTier[],
+} as const;

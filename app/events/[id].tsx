@@ -1,5 +1,5 @@
 import { colors } from '@/constants/colors';
-import { COMMITMENT_EMOJIS, EMOJI_THRESHOLDS, TIMING } from '@/constants/gameplay';
+import { COMMITMENT_EMOJIS, EMOJI_PROGRESSION, EMOJI_THRESHOLDS, TIMING } from '@/constants/gameplay';
 import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
@@ -150,53 +150,29 @@ export default function EventDetails() {
 
   const getCommitmentEmoji = () => {
     const absentTaskId = getAbsentTaskId(crewTasks);
-    const isAbsent = absentTaskId ? assignedTasks.has(absentTaskId) : false;
-
-    if (isAbsent) {
+    if (absentTaskId && assignedTasks.has(absentTaskId)) {
       return COMMITMENT_EMOJIS.ABSENT;
     }
 
-    // Count non-absent tasks
-    const totalTasks = crewTasks.length - 1; // Exclude absent
     const selectedCount = Array.from(assignedTasks).filter(
       (taskId) => taskId !== absentTaskId
     ).length;
 
-    if (selectedCount === 0) {
-      return ''; // No emoji when nothing selected
-    }
+    const totalTasks = crewTasks.length - 1; // Exclude absent task
+    const isSmallList = totalTasks <= EMOJI_THRESHOLDS.SMALL_TASK_LIST_MAX;
+    const progression = isSmallList ? EMOJI_PROGRESSION.small : EMOJI_PROGRESSION.large;
 
-    // If task list has <= threshold, show happiest emoji when all are checked
-    if (totalTasks <= EMOJI_THRESHOLDS.SMALL_TASK_LIST_MAX) {
-      if (selectedCount === totalTasks) {
-        return COMMITMENT_EMOJIS.SUPERHAPPY;
-      } else if (selectedCount === 3) {
-        return COMMITMENT_EMOJIS.VERY_HAPPY;
-      } else if (selectedCount === 2) {
-        return COMMITMENT_EMOJIS.HAPPY;
-      } else {
-        return COMMITMENT_EMOJIS.APPRECIATED;
-      }
-    }
+    // For small lists, if user selected ALL tasks, treat as max tier (Infinity)
+    const effectiveCount = isSmallList && selectedCount === totalTasks && selectedCount > 0
+      ? Infinity
+      : selectedCount;
 
-    // For task lists with > threshold, add wild emojis for overachievers
-    if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_8_PLUS) {
-      return COMMITMENT_EMOJIS.WIZARD;
-    } else if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_7) {
-      return COMMITMENT_EMOJIS.UNICORN;
-    } else if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_6) {
-      return COMMITMENT_EMOJIS.ROCKSTAR;
-    } else if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_5) {
-      return COMMITMENT_EMOJIS.SUPERSTAR;
-    } else if (selectedCount === 4) {
-      return COMMITMENT_EMOJIS.SATISFIED;
-    } else if (selectedCount === 3) {
-      return COMMITMENT_EMOJIS.VERY_HAPPY;
-    } else if (selectedCount === 2) {
-      return COMMITMENT_EMOJIS.HAPPY;
-    } else {
-      return COMMITMENT_EMOJIS.APPRECIATED;
-    }
+    // Lookup emoji from progression table
+    const tier = progression.find(({ min, max }) =>
+      effectiveCount >= min && effectiveCount <= max
+    );
+
+    return tier?.emoji ?? '';
   };
 
   const saveAssignments = async (taskSet: Set<string>) => {
