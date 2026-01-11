@@ -1,4 +1,5 @@
 import { EventCard } from '@/components/EventCard';
+import { colors } from '@/constants/colors';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, isFutureEvent, isPastEvent } from '@/lib/google-sheets';
@@ -144,15 +145,15 @@ export default function Index() {
             {nextEvent && (
               <View>
                 <Text style={styles.sectionHeader}>Upcoming event</Text>
-                <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} />
+                <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.primary} />
               </View>
             )}
 
             {futureEvents && futureEvents.length > 0 && (
               <View style={styles.futureEventsSection}>
-                <Text style={styles.sectionHeader}>Future events</Text>
+                <Text style={[styles.sectionHeader, { color: colors.secondary }]}>Future events</Text>
                 {futureEvents.map((event) => (
-                  <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} />
+                  <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} accentColor={colors.secondary} />
                 ))}
               </View>
             )}
@@ -266,13 +267,13 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
   },
   userButton: {
     paddingHorizontal: 16,
@@ -287,12 +288,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#5865F2',
+    backgroundColor: colors.discord,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarPlaceholderText: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
   },
   menuButtonText: {
     fontSize: 28,
-    color: '#007AFF',
+    color: colors.info,
     fontWeight: '600',
     letterSpacing: -1,
   },
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     ...microknightText.base,
     fontWeight: '600',
-    color: '#0a84ff',
+    color: colors.primary,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -323,12 +324,12 @@ const styles = StyleSheet.create({
   empty: {
     ...microknightText.md,
     textAlign: 'center',
-    color: '#8e8e93',
+    color: colors.textTertiary,
     marginTop: 32,
   },
   error: {
     ...microknightText.md,
-    color: '#ff453a',
+    color: colors.error,
     textAlign: 'center',
     padding: 16,
   },
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -347,7 +348,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.textPrimary,
     fontFamily: 'microknight',
     marginBottom: 20,
     textAlign: 'center',
@@ -358,17 +359,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: '#2c2c2e',
+    backgroundColor: colors.modalBackground,
     borderRadius: 12,
     marginBottom: 12,
   },
   filterOptionText: {
     ...microknightText.md,
-    color: '#fff',
+    color: colors.textPrimary,
   },
   checkmark: {
     fontSize: 18,
-    color: '#0a84ff',
+    color: colors.primary,
     fontWeight: '600',
   },
   userModalHeader: {
@@ -385,45 +386,45 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#5865F2',
+    backgroundColor: colors.discord,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   userModalAvatarText: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 32,
     fontWeight: '600',
   },
   userModalUsername: {
     ...microknightText.lg,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.textPrimary,
   },
   logoutButton: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: '#5865F2',
+    backgroundColor: colors.discord,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
   logoutButtonText: {
     ...microknightText.md,
-    color: '#fff',
+    color: colors.textPrimary,
     fontWeight: '600',
   },
   cancelButton: {
     marginTop: 8,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: '#ff453a',
+    backgroundColor: colors.error,
     borderRadius: 12,
     alignItems: 'center',
   },
   cancelButtonText: {
     ...microknightText.md,
-    color: '#fff',
+    color: colors.textPrimary,
     fontWeight: '600',
   },
 });

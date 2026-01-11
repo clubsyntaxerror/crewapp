@@ -309,7 +309,7 @@ export default function EventDetails() {
     '#ffd60a', // Yellow
     '#32d74b', // Green
     '#64d2ff', // Cyan
-    '#0a84ff', // Blue
+    '#ff9f0a', // Blue
     '#bf5af2', // Purple
     '#ff375f', // Pink/Magenta
   ];
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   button: {
-    backgroundColor: '#0a84ff',
+    backgroundColor: '#ff9f0a',
     padding: 16,
     margin: 20,
     marginTop: 8,
@@ -687,11 +687,11 @@ const styles = StyleSheet.create({
   },
   detailsToggleText: {
     ...microknightText.md,
-    color: '#0a84ff',
+    color: '#ff9f0a',
   },
   detailsToggleIcon: {
     ...microknightText.sm,
-    color: '#0a84ff',
+    color: '#ff9f0a',
   },
   crewTaskItem: {
     flexDirection: 'row',

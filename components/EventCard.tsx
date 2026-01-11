@@ -1,3 +1,4 @@
+import { colors } from '@/constants/colors';
 import { microknightText } from '@/constants/typography';
 import { EventSignupStats, getEventSignupStats } from '@/lib/task-assignments';
 import { Event } from '@/lib/types';
@@ -9,9 +10,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 interface EventCardProps {
   event: Event;
   refreshTrigger?: number;
+  accentColor?: string;
 }
 
-export function EventCard({ event, refreshTrigger }: EventCardProps) {
+export function EventCard({ event, refreshTrigger, accentColor = colors.primary }: EventCardProps) {
   const router = useRouter();
   const [stats, setStats] = useState<EventSignupStats | null>(null);
   const startDate = format(event.startDate, 'MMM dd, yyyy');
@@ -39,7 +41,11 @@ export function EventCard({ event, refreshTrigger }: EventCardProps) {
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        { borderLeftColor: accentColor },
+        pressed && styles.cardPressed
+      ]}
       onPress={handlePress}
     >
       <View style={styles.cardContent}>
@@ -53,13 +59,13 @@ export function EventCard({ event, refreshTrigger }: EventCardProps) {
           <View style={styles.statsInfo}>
             {stats.participating > 0 && (
               <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>💪</Text>
+                <Text style={[styles.statEmoji, { textShadowColor: `${accentColor}99` }]}>💪</Text>
                 <Text style={styles.statNumber}>{stats.participating}</Text>
               </View>
             )}
             {stats.absent > 0 && (
               <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>🏝️</Text>
+                <Text style={[styles.statEmoji, { textShadowColor: `${accentColor}99` }]}>🏝️</Text>
                 <Text style={styles.statNumber}>{stats.absent}</Text>
               </View>
             )}
@@ -72,11 +78,12 @@ export function EventCard({ event, refreshTrigger }: EventCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    borderLeftWidth: 3,
+    shadowColor: colors.background,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -105,25 +112,27 @@ const styles = StyleSheet.create({
   },
   statEmoji: {
     fontSize: 16,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   statNumber: {
     ...microknightText.md,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.textPrimary,
   },
   title: {
     ...microknightText.lg,
     fontWeight: '600',
     marginBottom: 4,
-    color: '#fff',
+    color: colors.textPrimary,
   },
   date: {
     ...microknightText.base,
-    color: '#8e8e93',
+    color: colors.textTertiary,
     marginBottom: 8,
   },
   venue: {
     ...microknightText.md,
-    color: '#e5e5ea',
+    color: colors.textSecondary,
   },
 });
