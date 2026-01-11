@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { microknightText } from '@/constants/typography';
+import { STRINGS } from '@/constants/strings';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
@@ -22,7 +23,7 @@ export default function LoginScreen() {
       console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign in with Discord. Please try again.';
       Alert.alert(
-        'Login Failed',
+        STRINGS.ERRORS.LOGIN_FAILED_TITLE,
         errorMessage,
         [{ text: 'OK' }]
       );
@@ -36,8 +37,8 @@ export default function LoginScreen() {
       <View style={styles.content}>
         {/* App Logo/Title */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>CREW APP</Text>
-          <Text style={styles.subtitle}>Club Syntax Error</Text>
+          <Text style={styles.appTitle}>{STRINGS.LOGIN.TITLE}</Text>
+          <Text style={styles.subtitle}>{STRINGS.LOGIN.SUBTITLE}</Text>
         </View>
 
         {/* Discord Logo */}
@@ -59,23 +60,21 @@ export default function LoginScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text style={styles.loginButtonText}>Sign in with Discord</Text>
+              <Text style={styles.loginButtonText}>{STRINGS.LOGIN.BUTTON}</Text>
             </>
           )}
         </Pressable>
 
         {/* Info Text */}
         <Text style={styles.infoText}>
-          Login with your Discord account to access{'\n'}
-          crew event management
+          {STRINGS.LOGIN.INFO_TEXT}
         </Text>
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          You must be a member of the{'\n'}
-          Club Syntax Error Discord server
+          {STRINGS.LOGIN.FOOTER_TEXT}
         </Text>
       </View>
     </View>

@@ -1,4 +1,7 @@
 import { colors } from '@/constants/colors';
+import { COMMITMENT_EMOJIS, EMOJI_THRESHOLDS } from '@/constants/gameplay';
+import { STRINGS } from '@/constants/strings';
+import { TIMING } from '@/constants/timing';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
@@ -151,7 +154,7 @@ export default function EventDetails() {
     const isAbsent = absentTaskId ? assignedTasks.has(absentTaskId) : false;
 
     if (isAbsent) {
-      return '😢'; // Sad - marked as absent
+      return COMMITMENT_EMOJIS.ABSENT;
     }
 
     // Count non-absent tasks
@@ -164,36 +167,36 @@ export default function EventDetails() {
       return ''; // No emoji when nothing selected
     }
 
-    // If task list has <= 4 tasks, show happiest emoji when all are checked
-    if (totalTasks <= 4) {
+    // If task list has <= threshold, show happiest emoji when all are checked
+    if (totalTasks <= EMOJI_THRESHOLDS.SMALL_TASK_LIST_MAX) {
       if (selectedCount === totalTasks) {
-        return '🤩'; // All tasks - super excited!
+        return COMMITMENT_EMOJIS.SUPERHAPPY;
       } else if (selectedCount === 3) {
-        return '😄'; // 3 tasks - very happy
+        return COMMITMENT_EMOJIS.VERY_HAPPY;
       } else if (selectedCount === 2) {
-        return '😊'; // 2 tasks - happy
+        return COMMITMENT_EMOJIS.HAPPY;
       } else {
-        return '🙂'; // 1 task - appreciated!
+        return COMMITMENT_EMOJIS.APPRECIATED;
       }
     }
 
-    // For task lists with > 4 tasks, add wild emojis for overachievers
-    if (selectedCount >= 8) {
-      return '💫'; // 8+ tasks - LEGENDARY WIZARD!
-    } else if (selectedCount >= 7) {
-      return '🖖'; // 7 tasks - MAGICAL UNICORN!
-    } else if (selectedCount >= 6) {
-      return '🧙'; // 6 tasks - ROCKSTAR!
-    } else if (selectedCount >= 5) {
-      return '🦄'; // 5 tasks - SUPERSTAR!
+    // For task lists with > threshold, add wild emojis for overachievers
+    if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_8_PLUS) {
+      return COMMITMENT_EMOJIS.WIZARD;
+    } else if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_7) {
+      return COMMITMENT_EMOJIS.UNICORN;
+    } else if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_6) {
+      return COMMITMENT_EMOJIS.ROCKSTAR;
+    } else if (selectedCount >= EMOJI_THRESHOLDS.OVERACHIEVER_5) {
+      return COMMITMENT_EMOJIS.SUPERSTAR;
     } else if (selectedCount === 4) {
-      return '🤩'; // 4 tasks - super excited!
+      return COMMITMENT_EMOJIS.SATISFIED;
     } else if (selectedCount === 3) {
-      return '😄'; // 3 tasks - very happy
+      return COMMITMENT_EMOJIS.VERY_HAPPY;
     } else if (selectedCount === 2) {
-      return '😊'; // 2 tasks - happy
+      return COMMITMENT_EMOJIS.HAPPY;
     } else {
-      return '🙂'; // 1 task - appreciated!
+      return COMMITMENT_EMOJIS.APPRECIATED;
     }
   };
 
@@ -222,14 +225,12 @@ export default function EventDetails() {
       setAllAssignments(eventAssignments);
 
       setSaveStatus('saved');
-      // Clear "saved" status after 2 seconds
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      setTimeout(() => setSaveStatus('idle'), TIMING.SAVE_SUCCESS_DISPLAY);
     } catch (error) {
       console.error('Error saving task assignments:', error);
       setSaveStatus('error');
-      setSaveError('Failed to save. Please try again.');
-      // Clear error status after 5 seconds
-      setTimeout(() => setSaveStatus('idle'), 5000);
+      setSaveError(STRINGS.ERRORS.SAVE_FAILED);
+      setTimeout(() => setSaveStatus('idle'), TIMING.SAVE_ERROR_DISPLAY);
     }
   };
 
@@ -244,7 +245,7 @@ export default function EventDetails() {
   if (!event) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>Event not found</Text>
+        <Text style={styles.error}>{STRINGS.EVENT.NOT_FOUND}</Text>
       </View>
     );
   }
@@ -293,7 +294,7 @@ export default function EventDetails() {
     <>
       <Stack.Screen
         options={{
-          title: 'Crew & volunteer signup',
+          title: STRINGS.EVENT.HEADER_TITLE,
           headerBackTitle: 'Events',
           headerShown: true,
           headerLargeTitle: false,
@@ -316,7 +317,7 @@ export default function EventDetails() {
 
         {hasRequiredRole && tasks.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>You're missing:</Text>
+            <Text style={styles.sectionTitle}>{STRINGS.EVENT.TASKS_MISSING}</Text>
             {tasks.map((task, index) => (
               <View key={index} style={styles.taskItem}>
                 <Text style={styles.taskBullet}>•</Text>
@@ -329,7 +330,7 @@ export default function EventDetails() {
         {hasRequiredRole ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              {isPastEvent ? 'Responsibilities (Event ended):' : 'Commit to responsibilities:'}
+              {isPastEvent ? STRINGS.EVENT.TASKS_TITLE_ENDED : STRINGS.EVENT.TASKS_TITLE_ACTIVE}
             </Text>
             {crewTasks.map((task, index) => {
               const taskIsAbsent = isAbsentTask(task, crewTasks);
@@ -408,20 +409,20 @@ export default function EventDetails() {
                 {saveStatus === 'saving' && (
                   <View style={styles.statusBadge}>
                     <ActivityIndicator size="small" color={colors.textTertiary} />
-                    <Text style={styles.statusText}>Saving...</Text>
+                    <Text style={styles.statusText}>{STRINGS.STATUS.SAVING}</Text>
                   </View>
                 )}
                 {saveStatus === 'saved' && (
                   <View style={[styles.statusBadge, styles.statusBadgeSuccess]}>
                     <Text style={styles.statusIcon}>✓</Text>
-                    <Text style={[styles.statusText, styles.statusTextSuccess]}>Saved</Text>
+                    <Text style={[styles.statusText, styles.statusTextSuccess]}>{STRINGS.STATUS.SAVED}</Text>
                   </View>
                 )}
                 {saveStatus === 'error' && (
                   <View style={[styles.statusBadge, styles.statusBadgeError]}>
                     <Text style={styles.statusIcon}>!</Text>
                     <Text style={[styles.statusText, styles.statusTextError]}>
-                      {saveError || 'Error saving'}
+                      {saveError || STRINGS.STATUS.ERROR_SAVING}
                     </Text>
                   </View>
                 )}
@@ -433,7 +434,7 @@ export default function EventDetails() {
             <View style={styles.unauthorizedContainer}>
               <Text style={styles.unauthorizedIcon}>😊</Text>
               <Text style={styles.unauthorizedText}>
-                Want to help out with our events? Reach out to us on Discord to learn about volunteering!
+                {STRINGS.EVENT.UNAUTHORIZED_MESSAGE}
               </Text>
             </View>
           </View>
@@ -445,7 +446,7 @@ export default function EventDetails() {
             onPress={() => setShowDetails(!showDetails)}
           >
             <Text style={styles.detailsToggleText}>
-              {showDetails ? 'Hide Event Details' : 'Show Event Details'}
+              {showDetails ? STRINGS.EVENT.DETAILS_HIDE : STRINGS.EVENT.DETAILS_SHOW}
             </Text>
             <Text style={styles.detailsToggleIcon}>
               {showDetails ? '▼' : '▶'}
@@ -456,7 +457,7 @@ export default function EventDetails() {
         {(showDetails || !hasRequiredRole) && (
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Venue</Text>
+              <Text style={styles.sectionTitle}>{STRINGS.EVENT.VENUE_TITLE}</Text>
               <Text style={styles.venue}>{event.venueName}</Text>
               {event.streetAddress && (
                 <>
@@ -465,7 +466,7 @@ export default function EventDetails() {
                     style={styles.mapButton}
                     onPress={() => openMapLocation(event.streetAddress!, event.venueName)}
                   >
-                    <Text style={styles.mapButtonText}>Open in Maps</Text>
+                    <Text style={styles.mapButtonText}>{STRINGS.EVENT.MAP_BUTTON}</Text>
                   </Pressable>
                 </>
               )}
@@ -473,7 +474,7 @@ export default function EventDetails() {
 
             {event.description && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Description</Text>
+                <Text style={styles.sectionTitle}>{STRINGS.EVENT.DESCRIPTION_TITLE}</Text>
                 <Text style={styles.description}>{event.description}</Text>
               </View>
             )}
@@ -513,7 +514,7 @@ export default function EventDetails() {
                 onPress={() => Linking.openURL(event.ticketsUrl!)}
               >
                 <Text style={styles.ticketsButtonText}>
-                  {event.ticketsTitle || 'Get Tickets'}
+                  {event.ticketsTitle || STRINGS.EVENT.TICKETS_BUTTON}
                 </Text>
               </Pressable>
             )}

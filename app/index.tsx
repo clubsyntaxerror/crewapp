@@ -1,6 +1,7 @@
 import { AvatarDisplay } from '@/components/AvatarDisplay';
 import { EventCard } from '@/components/EventCard';
 import { colors } from '@/constants/colors';
+import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
@@ -43,7 +44,7 @@ export default function Index() {
       setShowUserModal(false);
     } catch (error) {
       console.error('Logout error:', error);
-      Alert.alert('Logout Failed', 'Failed to sign out. Please try again.');
+      Alert.alert(STRINGS.ERRORS.LOGOUT_FAILED_TITLE, STRINGS.ERRORS.LOGOUT_FAILED_MESSAGE);
     }
   };
 
@@ -92,7 +93,7 @@ export default function Index() {
     <>
       <Stack.Screen
         options={{
-          title: 'Club Syntax Error Events',
+          title: STRINGS.APP_TITLE,
           headerShown: true,
           headerLargeTitle: true,
           headerTitleStyle: {
@@ -118,14 +119,14 @@ export default function Index() {
           <ScrollView contentContainerStyle={styles.list}>
             {nextEvent && (
               <View>
-                <Text style={styles.sectionHeader}>Next event</Text>
+                <Text style={styles.sectionHeader}>{STRINGS.HOME.NEXT_EVENT}</Text>
                 <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.primary} />
               </View>
             )}
 
             {futureEvents && futureEvents.length > 0 && (
               <View style={styles.futureEventsSection}>
-                <Text style={[styles.sectionHeader, { color: colors.secondary }]}>Future events</Text>
+                <Text style={[styles.sectionHeader, { color: colors.secondary }]}>{STRINGS.HOME.FUTURE_EVENTS}</Text>
                 {futureEvents.map((event) => (
                   <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} accentColor={colors.secondary} />
                 ))}
@@ -139,7 +140,7 @@ export default function Index() {
             renderItem={({ item }) => <EventCard event={item} refreshTrigger={statsRefreshTrigger} />}
             contentContainerStyle={styles.list}
             ListEmptyComponent={
-              <Text style={styles.empty}>No events scheduled</Text>
+              <Text style={styles.empty}>{STRINGS.HOME.NO_EVENTS}</Text>
             }
           />
         )}
@@ -155,13 +156,13 @@ export default function Index() {
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Filter Events</Text>
+                <Text style={styles.modalTitle}>{STRINGS.FILTER.TITLE}</Text>
 
                 <Pressable
                   style={styles.filterOption}
                   onPress={() => handleFilterSelect('upcoming')}
                 >
-                  <Text style={styles.filterOptionText}>Upcoming Events</Text>
+                  <Text style={styles.filterOptionText}>{STRINGS.FILTER.UPCOMING}</Text>
                   {filter === 'upcoming' && <Text style={styles.checkmark}>✓</Text>}
                 </Pressable>
 
@@ -169,7 +170,7 @@ export default function Index() {
                   style={styles.filterOption}
                   onPress={() => handleFilterSelect('past')}
                 >
-                  <Text style={styles.filterOptionText}>Past Events</Text>
+                  <Text style={styles.filterOptionText}>{STRINGS.FILTER.PAST}</Text>
                   {filter === 'past' && <Text style={styles.checkmark}>✓</Text>}
                 </Pressable>
 
@@ -177,7 +178,7 @@ export default function Index() {
                   style={styles.filterOption}
                   onPress={() => handleFilterSelect('all')}
                 >
-                  <Text style={styles.filterOptionText}>All Events</Text>
+                  <Text style={styles.filterOptionText}>{STRINGS.FILTER.ALL}</Text>
                   {filter === 'all' && <Text style={styles.checkmark}>✓</Text>}
                 </Pressable>
 
@@ -185,7 +186,7 @@ export default function Index() {
                   style={styles.cancelButton}
                   onPress={() => setShowFilterModal(false)}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>{STRINGS.FILTER.CANCEL}</Text>
                 </Pressable>
               </View>
             </TouchableWithoutFeedback>
@@ -205,21 +206,21 @@ export default function Index() {
               <View style={styles.modalContent}>
                 <View style={styles.userModalHeader}>
                   <AvatarDisplay avatarUrl={discordAvatar} username={discordUsername} size={80} />
-                  <Text style={styles.userModalUsername}>{discordUsername || 'Discord User'}</Text>
+                  <Text style={styles.userModalUsername}>{discordUsername || STRINGS.USER.FALLBACK_USERNAME}</Text>
                 </View>
 
                 <Pressable
                   style={styles.logoutButton}
                   onPress={handleLogout}
                 >
-                  <Text style={styles.logoutButtonText}>Logout</Text>
+                  <Text style={styles.logoutButtonText}>{STRINGS.USER.LOGOUT}</Text>
                 </Pressable>
 
                 <Pressable
                   style={styles.cancelButton}
                   onPress={() => setShowUserModal(false)}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>{STRINGS.FILTER.CANCEL}</Text>
                 </Pressable>
               </View>
             </TouchableWithoutFeedback>
