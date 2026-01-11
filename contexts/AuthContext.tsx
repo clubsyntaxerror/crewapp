@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 WebBrowser.maybeCompleteAuthSession();
 
 // Allowed Discord roles for task management
-const ALLOWED_ROLES = ['crew2', 'volunteer2'];
+const ALLOWED_ROLES = ['crew', 'volunteer'];
 
 interface DiscordUserMetadata {
   avatar?: string;
