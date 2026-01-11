@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
@@ -98,8 +99,7 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   appTitle: {
-    fontFamily: 'microknight',
-    fontSize: 32,
+    ...microknightText['3xl'],
     color: '#fff',
     marginBottom: 8,
     letterSpacing: 2,

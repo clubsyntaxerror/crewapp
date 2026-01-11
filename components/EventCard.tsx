@@ -1,3 +1,4 @@
+import { microknightText } from '@/constants/typography';
 import { EventSignupStats, getEventSignupStats } from '@/lib/task-assignments';
 import { Event } from '@/lib/types';
 import { format } from 'date-fns';
@@ -106,27 +107,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   statNumber: {
-    fontSize: 16,
+    ...microknightText.md,
     fontWeight: '600',
     color: '#fff',
-    fontFamily: 'microknight',
   },
   title: {
-    fontSize: 18,
+    ...microknightText.lg,
     fontWeight: '600',
     marginBottom: 4,
     color: '#fff',
-    fontFamily: 'microknight',
   },
   date: {
-    fontSize: 14,
+    ...microknightText.base,
     color: '#8e8e93',
     marginBottom: 8,
-    fontFamily: 'microknight',
   },
   venue: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#e5e5ea',
-    fontFamily: 'microknight',
   },
 });

@@ -1,4 +1,5 @@
 import { EventCard } from '@/components/EventCard';
+import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, isFutureEvent, isPastEvent } from '@/lib/google-sheets';
 import { supabase } from '@/lib/supabase';
@@ -309,10 +310,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionHeader: {
-    fontSize: 14,
+    ...microknightText.base,
     fontWeight: '600',
     color: '#0a84ff',
-    fontFamily: 'microknight',
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -321,18 +321,16 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   empty: {
+    ...microknightText.md,
     textAlign: 'center',
-    fontSize: 16,
     color: '#8e8e93',
     marginTop: 32,
-    fontFamily: 'microknight',
   },
   error: {
+    ...microknightText.md,
     color: '#ff453a',
-    fontSize: 16,
     textAlign: 'center',
     padding: 16,
-    fontFamily: 'microknight',
   },
   modalOverlay: {
     flex: 1,
@@ -365,9 +363,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   filterOptionText: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#fff',
-    fontFamily: 'microknight',
   },
   checkmark: {
     fontSize: 18,
@@ -399,10 +396,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   userModalUsername: {
-    fontSize: 18,
+    ...microknightText.lg,
     fontWeight: '600',
     color: '#fff',
-    fontFamily: 'microknight',
   },
   logoutButton: {
     paddingVertical: 16,
@@ -413,10 +409,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   logoutButtonText: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#fff',
     fontWeight: '600',
-    fontFamily: 'microknight',
   },
   cancelButton: {
     marginTop: 8,
@@ -427,9 +422,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#fff',
     fontWeight: '600',
-    fontFamily: 'microknight',
   },
 });

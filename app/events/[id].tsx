@@ -1,3 +1,4 @@
+import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { openMapLocation } from '@/lib/maps';
@@ -556,22 +557,19 @@ const styles = StyleSheet.create({
     borderBottomColor: '#38383a',
   },
   title: {
-    fontSize: 28,
+    ...microknightText['2xl'],
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#fff',
-    fontFamily: 'microknight',
   },
   date: {
-    fontSize: 18,
+    ...microknightText.lg,
     color: '#e5e5ea',
     marginBottom: 4,
-    fontFamily: 'microknight',
   },
   time: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#8e8e93',
-    fontFamily: 'microknight',
   },
   section: {
     backgroundColor: '#1c1c1e',
@@ -579,25 +577,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 14,
+    ...microknightText.base,
     fontWeight: '600',
     color: '#8e8e93',
     textTransform: 'uppercase',
     marginBottom: 8,
     letterSpacing: 0.5,
-    fontFamily: 'microknight',
   },
   venue: {
-    fontSize: 20,
+    ...microknightText.xl,
     fontWeight: '600',
     color: '#fff',
-    fontFamily: 'microknight',
   },
   address: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#8e8e93',
     marginTop: 4,
-    fontFamily: 'microknight',
   },
   mapButton: {
     backgroundColor: '#30d158',
@@ -608,22 +603,18 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   mapButtonText: {
+    ...microknightText.base,
     color: '#fff',
-    fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'microknight',
   },
   description: {
-    fontSize: 16,
-    lineHeight: 24,
+    ...microknightText.md,
     color: '#e5e5ea',
-    fontFamily: 'microknight',
   },
   info: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#e5e5ea',
     marginBottom: 4,
-    fontFamily: 'microknight',
   },
   ticketsButton: {
     backgroundColor: '#ff9f0a',
@@ -634,10 +625,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ticketsButtonText: {
+    ...microknightText.md,
     color: '#fff',
-    fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'microknight',
   },
   button: {
     backgroundColor: '#0a84ff',
@@ -648,15 +638,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
+    ...microknightText.md,
     color: '#fff',
-    fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'microknight',
   },
   error: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#ff453a',
-    fontFamily: 'microknight',
   },
   taskItem: {
     flexDirection: 'row',
@@ -664,16 +652,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   taskBullet: {
+    ...microknightText.md,
     color: '#ff453a',
-    fontSize: 16,
     marginRight: 8,
-    fontFamily: 'microknight',
   },
   taskText: {
+    ...microknightText.base,
     flex: 1,
     color: '#e5e5ea',
-    fontSize: 14,
-    fontFamily: 'microknight',
   },
   detailsToggle: {
     backgroundColor: '#1c1c1e',
@@ -684,14 +670,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailsToggleText: {
+    ...microknightText.md,
     color: '#0a84ff',
-    fontSize: 16,
-    fontFamily: 'microknight',
   },
   detailsToggleIcon: {
+    ...microknightText.sm,
     color: '#0a84ff',
-    fontSize: 12,
-    fontFamily: 'microknight',
   },
   crewTaskItem: {
     flexDirection: 'row',
@@ -721,27 +705,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   crewTaskText: {
-    fontSize: 16,
+    ...microknightText.md,
     color: '#e5e5ea',
-    fontFamily: 'microknight',
   },
   crewTaskTextChecked: {
     color: '#0a84ff',
     fontWeight: '600',
   },
   crewTaskDescription: {
-    fontSize: 12,
+    ...microknightText.sm,
     color: '#8e8e93',
-    fontFamily: 'microknight',
     marginTop: 2,
   },
   crewTaskUsernamesContainer: {
     marginTop: 4,
   },
   crewTaskUsername: {
-    fontSize: 11,
+    ...microknightText.xs,
     color: '#ff9f0a',
-    fontFamily: 'microknight',
     fontStyle: 'italic',
   },
   crewTaskUsernameOwn: {
@@ -783,14 +764,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 69, 58, 0.15)',
   },
   statusIcon: {
-    fontSize: 14,
+    ...microknightText.base,
     marginRight: 6,
-    fontFamily: 'microknight',
   },
   statusText: {
-    fontSize: 12,
+    ...microknightText.sm,
     color: '#8e8e93',
-    fontFamily: 'microknight',
   },
   statusTextSuccess: {
     color: '#30d158',
@@ -808,10 +787,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   unauthorizedText: {
-    fontSize: 14,
+    ...microknightText.base,
     color: '#8e8e93',
-    fontFamily: 'microknight',
     textAlign: 'center',
-    lineHeight: 20,
   },
 });
