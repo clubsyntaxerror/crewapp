@@ -1,13 +1,14 @@
+import { AvatarDisplay } from '@/components/AvatarDisplay';
 import { EventCard } from '@/components/EventCard';
 import { colors } from '@/constants/colors';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
 import { fetchEvents, isFutureEvent, isPastEvent } from '@/lib/google-sheets';
-import { supabase } from '@/lib/supabase';
 import { Event } from '@/lib/types';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 
 type FilterType = 'upcoming' | 'past' | 'all';
 
@@ -51,30 +52,11 @@ export default function Index() {
   }, []);
 
   // Set up real-time subscription for task assignments across all events
-  useEffect(() => {
-    // Subscribe to changes in task_assignments table
-    const channel = supabase
-      .channel('task_assignments_global')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'task_assignments',
-        },
-        (payload) => {
-          console.log('Real-time stats update received:', payload);
-          // Trigger a refresh of all event card stats
-          setStatsRefreshTrigger((prev) => prev + 1);
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  useTaskAssignmentSync({
+    onUpdate: () => {
+      setStatsRefreshTrigger((prev) => prev + 1);
+    },
+  });
 
   const loadEvents = async () => {
     try {
@@ -121,15 +103,7 @@ export default function Index() {
           },
           headerLeft: () => (
             <Pressable onPress={() => setShowUserModal(true)} style={styles.userButton}>
-              {discordAvatar ? (
-                <Image source={{ uri: discordAvatar }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarPlaceholderText}>
-                    {discordUsername?.charAt(0).toUpperCase() || '?'}
-                  </Text>
-                </View>
-              )}
+              <AvatarDisplay avatarUrl={discordAvatar} username={discordUsername} size={32} />
             </Pressable>
           ),
           headerRight: () => (
@@ -230,15 +204,7 @@ export default function Index() {
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
                 <View style={styles.userModalHeader}>
-                  {discordAvatar ? (
-                    <Image source={{ uri: discordAvatar }} style={styles.userModalAvatar} />
-                  ) : (
-                    <View style={styles.userModalAvatarPlaceholder}>
-                      <Text style={styles.userModalAvatarText}>
-                        {discordUsername?.charAt(0).toUpperCase() || '?'}
-                      </Text>
-                    </View>
-                  )}
+                  <AvatarDisplay avatarUrl={discordAvatar} username={discordUsername} size={80} />
                   <Text style={styles.userModalUsername}>{discordUsername || 'Discord User'}</Text>
                 </View>
 
@@ -278,24 +244,6 @@ const styles = StyleSheet.create({
   userButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.discord,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarPlaceholderText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
   },
   menuButton: {
     paddingHorizontal: 16,
@@ -375,26 +323,7 @@ const styles = StyleSheet.create({
   userModalHeader: {
     alignItems: 'center',
     marginBottom: 24,
-  },
-  userModalAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 16,
-  },
-  userModalAvatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.discord,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  userModalAvatarText: {
-    color: colors.textPrimary,
-    fontSize: 32,
-    fontWeight: '600',
+    gap: 16,
   },
   userModalUsername: {
     ...microknightText.lg,

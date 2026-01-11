@@ -1,8 +1,10 @@
+import { colors } from '@/constants/colors';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
+import { getAbsentTaskId, isAbsentTask } from '@/lib/task-utils';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { openMapLocation } from '@/lib/maps';
-import { supabase } from '@/lib/supabase';
 import {
   fetchEventTaskAssignments,
   fetchUserEventTaskAssignments,
@@ -57,7 +59,7 @@ export default function EventDetails() {
 
     setAssignedTasks((prev) => {
       const newSet = new Set(prev);
-      const absentTaskId = crewTasks[crewTasks.length - 1]?.id;
+      const absentTaskId = getAbsentTaskId(crewTasks);
 
       // If toggling the absent task
       if (taskId === absentTaskId) {
@@ -75,7 +77,9 @@ export default function EventDetails() {
           newSet.delete(taskId);
         } else {
           // Remove absent if present, then add the task
-          newSet.delete(absentTaskId);
+          if (absentTaskId) {
+            newSet.delete(absentTaskId);
+          }
           newSet.add(taskId);
         }
       }
@@ -92,39 +96,19 @@ export default function EventDetails() {
   }, [id]);
 
   // Set up real-time subscription for task assignments
-  useEffect(() => {
-    if (!event?.eventId) return;
+  useTaskAssignmentSync({
+    eventId: event?.eventId,
+    onUpdate: async () => {
+      if (!event?.eventId) return;
 
-    // Subscribe to changes in task_assignments for this event
-    const channel = supabase
-      .channel(`task_assignments:${event.eventId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'task_assignments',
-          filter: `event_id=eq.${event.eventId}`,
-        },
-        async (payload) => {
-          console.log('Real-time update received:', payload);
-
-          // Reload all assignments to update the display
-          try {
-            const eventAssignments = await fetchEventTaskAssignments(event.eventId);
-            setAllAssignments(eventAssignments);
-          } catch (error) {
-            console.error('Error reloading assignments after real-time update:', error);
-          }
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [event?.eventId]);
+      try {
+        const eventAssignments = await fetchEventTaskAssignments(event.eventId);
+        setAllAssignments(eventAssignments);
+      } catch (error) {
+        console.error('Error reloading assignments after real-time update:', error);
+      }
+    },
+  });
 
   const loadEvent = async () => {
     try {
@@ -163,8 +147,8 @@ export default function EventDetails() {
   };
 
   const getCommitmentEmoji = () => {
-    const absentTaskId = crewTasks[crewTasks.length - 1]?.id;
-    const isAbsent = assignedTasks.has(absentTaskId);
+    const absentTaskId = getAbsentTaskId(crewTasks);
+    const isAbsent = absentTaskId ? assignedTasks.has(absentTaskId) : false;
 
     if (isAbsent) {
       return '😢'; // Sad - marked as absent
@@ -252,7 +236,7 @@ export default function EventDetails() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.info} />
       </View>
     );
   }
@@ -303,16 +287,7 @@ export default function EventDetails() {
   const isPastEvent = event.endDate.getTime() < Date.now();
 
   // Rainbow colors for crew tasks
-  const rainbowColors = [
-    '#ff453a', // Red
-    '#ff9f0a', // Orange
-    '#ffd60a', // Yellow
-    '#32d74b', // Green
-    '#64d2ff', // Cyan
-    '#ff9f0a', // Blue
-    '#bf5af2', // Purple
-    '#ff375f', // Pink/Magenta
-  ];
+  const rainbowColors = colors.rainbow;
 
   return (
     <>
@@ -341,7 +316,7 @@ export default function EventDetails() {
 
         {hasRequiredRole && tasks.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Stuff to complete:</Text>
+            <Text style={styles.sectionTitle}>You're missing:</Text>
             {tasks.map((task, index) => (
               <View key={index} style={styles.taskItem}>
                 <Text style={styles.taskBullet}>•</Text>
@@ -357,9 +332,10 @@ export default function EventDetails() {
               {isPastEvent ? 'Responsibilities (Event ended):' : 'Commit to responsibilities:'}
             </Text>
             {crewTasks.map((task, index) => {
-              const isAbsentTask = index === crewTasks.length - 1;
-              const isAbsentChecked = assignedTasks.has(crewTasks[crewTasks.length - 1]?.id);
-              const isDisabled = isPastEvent || (!isAbsentTask && isAbsentChecked);
+              const taskIsAbsent = isAbsentTask(task, crewTasks);
+              const absentTaskId = getAbsentTaskId(crewTasks);
+              const isAbsentChecked = absentTaskId ? assignedTasks.has(absentTaskId) : false;
+              const isDisabled = isPastEvent || (!taskIsAbsent && isAbsentChecked);
               const usernames = getUsernamesForTask(task.id);
               const taskColor = rainbowColors[index % rainbowColors.length];
 
@@ -431,7 +407,7 @@ export default function EventDetails() {
                 {/* Save status indicators on the right */}
                 {saveStatus === 'saving' && (
                   <View style={styles.statusBadge}>
-                    <ActivityIndicator size="small" color="#8e8e93" />
+                    <ActivityIndicator size="small" color={colors.textTertiary} />
                     <Text style={styles.statusText}>Saving...</Text>
                   </View>
                 )}
@@ -558,44 +534,44 @@ export default function EventDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.cardBackground,
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#38383a',
+    borderBottomColor: colors.borderColor,
   },
   title: {
     ...microknightText['2xl'],
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#fff',
+    color: colors.textPrimary,
   },
   date: {
     ...microknightText.lg,
-    color: '#e5e5ea',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   time: {
     ...microknightText.md,
-    color: '#8e8e93',
+    color: colors.textTertiary,
   },
   section: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.cardBackground,
     padding: 20,
     marginTop: 12,
   },
   sectionTitle: {
     ...microknightText.base,
     fontWeight: '600',
-    color: '#8e8e93',
+    color: colors.textTertiary,
     textTransform: 'uppercase',
     marginBottom: 8,
     letterSpacing: 0.5,
@@ -603,15 +579,15 @@ const styles = StyleSheet.create({
   venue: {
     ...microknightText.xl,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.textPrimary,
   },
   address: {
     ...microknightText.md,
-    color: '#8e8e93',
+    color: colors.textTertiary,
     marginTop: 4,
   },
   mapButton: {
-    backgroundColor: '#30d158',
+    backgroundColor: colors.success,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -620,20 +596,20 @@ const styles = StyleSheet.create({
   },
   mapButtonText: {
     ...microknightText.base,
-    color: '#fff',
+    color: colors.textPrimary,
     fontWeight: '600',
   },
   description: {
     ...microknightText.md,
-    color: '#e5e5ea',
+    color: colors.textSecondary,
   },
   info: {
     ...microknightText.md,
-    color: '#e5e5ea',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   ticketsButton: {
-    backgroundColor: '#ff9f0a',
+    backgroundColor: colors.primary,
     padding: 16,
     margin: 20,
     marginBottom: 8,
@@ -642,11 +618,11 @@ const styles = StyleSheet.create({
   },
   ticketsButtonText: {
     ...microknightText.md,
-    color: '#fff',
+    color: colors.textPrimary,
     fontWeight: '600',
   },
   button: {
-    backgroundColor: '#ff9f0a',
+    backgroundColor: colors.primary,
     padding: 16,
     margin: 20,
     marginTop: 8,
@@ -655,12 +631,12 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     ...microknightText.md,
-    color: '#fff',
+    color: colors.textPrimary,
     fontWeight: '600',
   },
   error: {
     ...microknightText.md,
-    color: '#ff453a',
+    color: colors.error,
   },
   taskItem: {
     flexDirection: 'row',
@@ -669,16 +645,16 @@ const styles = StyleSheet.create({
   },
   taskBullet: {
     ...microknightText.md,
-    color: '#ff453a',
+    color: colors.error,
     marginRight: 8,
   },
   taskText: {
     ...microknightText.base,
     flex: 1,
-    color: '#e5e5ea',
+    color: colors.textSecondary,
   },
   detailsToggle: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: colors.cardBackground,
     padding: 16,
     marginTop: 12,
     flexDirection: 'row',
@@ -687,11 +663,11 @@ const styles = StyleSheet.create({
   },
   detailsToggleText: {
     ...microknightText.md,
-    color: '#ff9f0a',
+    color: colors.primary,
   },
   detailsToggleIcon: {
     ...microknightText.sm,
-    color: '#ff9f0a',
+    color: colors.primary,
   },
   crewTaskItem: {
     flexDirection: 'row',
@@ -719,11 +695,11 @@ const styles = StyleSheet.create({
   },
   crewTaskText: {
     ...microknightText.md,
-    color: '#e5e5ea',
+    color: colors.textSecondary,
   },
   crewTaskDescription: {
     ...microknightText.sm,
-    color: '#8e8e93',
+    color: colors.textTertiary,
     marginTop: 2,
   },
   crewTaskUsernamesContainer: {
@@ -737,10 +713,10 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   checkboxDisabled: {
-    borderColor: '#8e8e93',
+    borderColor: colors.textTertiary,
   },
   crewTaskTextDisabled: {
-    color: '#8e8e93',
+    color: colors.textTertiary,
   },
   statusContainer: {
     marginTop: 12,
@@ -760,7 +736,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: '#2c2c2e',
+    backgroundColor: colors.modalBackground,
   },
   statusBadgeSuccess: {
     backgroundColor: 'rgba(48, 209, 88, 0.15)',
@@ -774,13 +750,13 @@ const styles = StyleSheet.create({
   },
   statusText: {
     ...microknightText.sm,
-    color: '#8e8e93',
+    color: colors.textTertiary,
   },
   statusTextSuccess: {
-    color: '#30d158',
+    color: colors.success,
   },
   statusTextError: {
-    color: '#ff453a',
+    color: colors.error,
   },
   unauthorizedContainer: {
     alignItems: 'center',
@@ -793,7 +769,7 @@ const styles = StyleSheet.create({
   },
   unauthorizedText: {
     ...microknightText.base,
-    color: '#8e8e93',
+    color: colors.textTertiary,
     textAlign: 'center',
   },
 });
