@@ -1,16 +1,15 @@
 import { colors } from '@/constants/colors';
-import { COMMITMENT_EMOJIS, EMOJI_THRESHOLDS } from '@/constants/gameplay';
+import { COMMITMENT_EMOJIS, EMOJI_THRESHOLDS, TIMING } from '@/constants/gameplay';
 import { STRINGS } from '@/constants/strings';
-import { TIMING } from '@/constants/timing';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
-import { getAbsentTaskId, isAbsentTask } from '@/lib/task-utils';
-import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
-import { openMapLocation } from '@/lib/maps';
+import { fetchEvents, fetchTaskList, openMapLocation } from '@/lib/google-sheets';
 import {
   fetchEventTaskAssignments,
   fetchUserEventTaskAssignments,
+  getAbsentTaskId,
+  isAbsentTask,
   saveUserTaskAssignments,
   TaskAssignment,
 } from '@/lib/task-assignments';

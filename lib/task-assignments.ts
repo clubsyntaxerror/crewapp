@@ -145,6 +145,28 @@ export async function getEventTaskSummary(
   return summary;
 }
 
+/**
+ * Get the ID of the "Absent" task (last task in the crew tasks list)
+ */
+export function getAbsentTaskId(crewTasks: CrewTask[]): string | undefined {
+  return crewTasks[crewTasks.length - 1]?.id;
+}
+
+/**
+ * Check if a task is the "Absent" task
+ */
+export function isAbsentTask(task: CrewTask, crewTasks: CrewTask[]): boolean {
+  return task.id === getAbsentTaskId(crewTasks);
+}
+
+/**
+ * Check if the "Absent" task is checked
+ */
+export function isAbsentChecked(assignedTasks: Set<string>, crewTasks: CrewTask[]): boolean {
+  const absentId = getAbsentTaskId(crewTasks);
+  return absentId ? assignedTasks.has(absentId) : false;
+}
+
 export interface EventSignupStats {
   participating: number; // Users with at least one non-absent task
   absent: number; // Users marked as absent

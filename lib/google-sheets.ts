@@ -1,4 +1,5 @@
-import { generateAccessToken } from './google-auth';
+import { Platform, Linking } from 'react-native';
+import { encode } from 'react-native-jwt-io';
 import { CrewTask, Event } from './types';
 
 const SHEET_ID = process.env.EXPO_PUBLIC_GOOGLE_SHEET_ID;
@@ -6,6 +7,62 @@ const SHEET_NAME = process.env.EXPO_PUBLIC_GOOGLE_SHEET_NAME || 'Events';
 const DEFAULT_TASK_LIST = 'H62';
 
 const H62_ADDRESS = 'Hornsgatan 62, 11821 Stockholm';
+
+// Google OAuth constants
+interface ServiceAccountCredentials {
+  clientEmail: string;
+  privateKey: string;
+}
+
+interface JWTClaims {
+  iss: string;
+  scope: string;
+  aud: string;
+  exp: number;
+  iat: number;
+}
+
+const TOKEN_DURATION = 3600; // 1 hour in seconds
+
+/**
+ * Generate Google OAuth access token using service account credentials
+ */
+async function generateAccessToken(
+  credentials: ServiceAccountCredentials
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+
+  const claims: JWTClaims = {
+    iss: credentials.clientEmail,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + TOKEN_DURATION,
+    iat: now,
+  };
+
+  // Create JWT
+  const jwt = encode(claims, credentials.privateKey, 'RS256');
+
+  // Exchange JWT for access token
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }).toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get access token: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
 
 function parseSheetRow(row: string[]): Event | null {
   // Skip rows without required data (startDate, venueName, eventId)
@@ -98,6 +155,36 @@ export function isFutureEvent(event: Event): boolean {
 
 export function isPastEvent(event: Event): boolean {
   return event.endDate.getTime() < Date.now();
+}
+
+/**
+ * Opens the device's map application with the given address
+ */
+export function openMapLocation(address: string, venueName?: string) {
+  const encodedAddress = encodeURIComponent(address);
+  const label = venueName ? encodeURIComponent(venueName) : encodedAddress;
+
+  let url: string;
+
+  if (Platform.OS === 'ios') {
+    // Use Apple Maps on iOS
+    url = `maps://maps.apple.com/?q=${label}&address=${encodedAddress}`;
+  } else {
+    // Use Google Maps on Android and web
+    url = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+  }
+
+  Linking.canOpenURL(url)
+    .then((supported) => {
+      if (supported) {
+        return Linking.openURL(url);
+      } else {
+        // Fallback to Google Maps web on all platforms
+        const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        return Linking.openURL(fallbackUrl);
+      }
+    })
+    .catch((err) => console.error('Error opening maps:', err));
 }
 
 function parseTaskRow(row: string[]): CrewTask | null {
