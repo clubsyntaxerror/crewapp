@@ -144,7 +144,7 @@ export default function Index() {
           <ScrollView contentContainerStyle={styles.list}>
             {nextEvent && (
               <View>
-                <Text style={styles.sectionHeader}>Upcoming event</Text>
+                <Text style={styles.sectionHeader}>Next event</Text>
                 <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.primary} />
               </View>
             )}

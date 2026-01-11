@@ -1,5 +1,6 @@
 import { colors } from '@/constants/colors';
 import { microknightText } from '@/constants/typography';
+import { useAuth } from '@/contexts/AuthContext';
 import { EventSignupStats, getEventSignupStats } from '@/lib/task-assignments';
 import { Event } from '@/lib/types';
 import { format } from 'date-fns';
@@ -15,8 +16,9 @@ interface EventCardProps {
 
 export function EventCard({ event, refreshTrigger, accentColor = colors.primary }: EventCardProps) {
   const router = useRouter();
+  const { hasRequiredRole } = useAuth();
   const [stats, setStats] = useState<EventSignupStats | null>(null);
-  const startDate = format(event.startDate, 'MMM dd, yyyy');
+  const startDate = format(event.startDate, 'MMMM dd, yyyy');
 
   useEffect(() => {
     loadStats();
@@ -55,7 +57,7 @@ export function EventCard({ event, refreshTrigger, accentColor = colors.primary 
           <Text style={styles.venue}>{event.venueName}</Text>
         </View>
 
-        {stats && stats.total > 0 && (
+        {hasRequiredRole && stats && stats.total > 0 && (
           <View style={styles.statsInfo}>
             {stats.participating > 0 && (
               <View style={styles.statItem}>
