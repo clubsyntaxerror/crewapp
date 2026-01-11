@@ -302,6 +302,18 @@ export default function EventDetails() {
   const tasks = getTasks();
   const isPastEvent = event.endDate.getTime() < Date.now();
 
+  // Rainbow colors for crew tasks
+  const rainbowColors = [
+    '#ff453a', // Red
+    '#ff9f0a', // Orange
+    '#ffd60a', // Yellow
+    '#32d74b', // Green
+    '#64d2ff', // Cyan
+    '#0a84ff', // Blue
+    '#bf5af2', // Purple
+    '#ff375f', // Pink/Magenta
+  ];
+
   return (
     <>
       <Stack.Screen
@@ -349,12 +361,14 @@ export default function EventDetails() {
               const isAbsentChecked = assignedTasks.has(crewTasks[crewTasks.length - 1]?.id);
               const isDisabled = isPastEvent || (!isAbsentTask && isAbsentChecked);
               const usernames = getUsernamesForTask(task.id);
+              const taskColor = rainbowColors[index % rainbowColors.length];
 
               return (
                 <Pressable
                   key={task.id}
                   style={[
                     styles.crewTaskItem,
+                    { backgroundColor: taskColor + '20' }, // 20 is 12.5% opacity in hex
                     isDisabled && styles.crewTaskItemDisabled
                   ]}
                   onPress={() => !isDisabled && toggleTask(task.id)}
@@ -362,16 +376,17 @@ export default function EventDetails() {
                 >
                   <View style={[
                     styles.checkbox,
+                    { borderColor: taskColor },
                     isDisabled && styles.checkboxDisabled
                   ]}>
                     {assignedTasks.has(task.id) && (
-                      <Text style={styles.checkboxChecked}>✓</Text>
+                      <Text style={[styles.checkboxChecked, { color: taskColor }]}>✓</Text>
                     )}
                   </View>
                   <View style={styles.crewTaskTextContainer}>
                     <Text style={[
                       styles.crewTaskText,
-                      assignedTasks.has(task.id) && styles.crewTaskTextChecked,
+                      assignedTasks.has(task.id) && { color: taskColor, fontWeight: '600' },
                       isDisabled && styles.crewTaskTextDisabled
                     ]}>
                       {task.label}
@@ -391,7 +406,8 @@ export default function EventDetails() {
                             key={idx}
                             style={[
                               styles.crewTaskUsername,
-                              username === discordUsername && styles.crewTaskUsernameOwn,
+                              { color: taskColor },
+                              username === discordUsername && { fontWeight: '600' },
                               isDisabled && styles.crewTaskTextDisabled
                             ]}
                           >
@@ -682,7 +698,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#2c2c2e',
     borderRadius: 8,
     marginBottom: 8,
   },
@@ -691,13 +706,11 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#0a84ff',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    color: '#0a84ff',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -707,10 +720,6 @@ const styles = StyleSheet.create({
   crewTaskText: {
     ...microknightText.md,
     color: '#e5e5ea',
-  },
-  crewTaskTextChecked: {
-    color: '#0a84ff',
-    fontWeight: '600',
   },
   crewTaskDescription: {
     ...microknightText.sm,
@@ -722,11 +731,7 @@ const styles = StyleSheet.create({
   },
   crewTaskUsername: {
     ...microknightText.xs,
-    color: '#ff9f0a',
     fontStyle: 'italic',
-  },
-  crewTaskUsernameOwn: {
-    color: '#0a84ff',
   },
   crewTaskItemDisabled: {
     opacity: 0.4,
