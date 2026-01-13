@@ -1,5 +1,6 @@
 import { Platform, Linking } from 'react-native';
 import { encode } from 'react-native-jwt-io';
+import { parse } from 'date-fns';
 import { CrewTask, Event } from './types';
 
 const SHEET_ID = process.env.EXPO_PUBLIC_GOOGLE_SHEET_ID;
@@ -76,10 +77,14 @@ function parseSheetRow(row: string[]): Event | null {
     const streetAddress = providedAddress ||
       (venueName === 'H62' ? H62_ADDRESS : undefined);
 
+    // Parse dates from Google Sheets format (M/D/YYYY H:mm:ss)
+    const startDate = parse(row[0], 'M/d/yyyy H:mm:ss', new Date());
+    const endDate = parse(row[1], 'M/d/yyyy H:mm:ss', new Date());
+
     return {
       eventId: row[15], // EventId (moved to column P)
-      startDate: new Date(row[0]), // EventStartDateAndTime
-      endDate: new Date(row[1]), // EventEndDateAndTime
+      startDate,
+      endDate,
       venueName, // VenueName
       coverFee: row[3] || undefined, // OptionalCoverFee
       title: row[4] || venueName, // OptionalEventTitle, fallback to venue name
@@ -109,7 +114,7 @@ export async function fetchEvents(): Promise<Event[]> {
   const clientEmail = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_EMAIL;
 
   if (!privateKey || !clientEmail) {
-    throw new Error('Service account credentials not configured');
+    throw new Error('Service account credentials not configured. Check your .env.local file.');
   }
 
   try {
@@ -121,6 +126,7 @@ export async function fetchEvents(): Promise<Event[]> {
 
     // Fetch data from Google Sheets API
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}`;
+
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -141,7 +147,6 @@ export async function fetchEvents(): Promise<Event[]> {
       .map(parseSheetRow)
       .filter((event): event is Event => event !== null)
       .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-
     return events;
   } catch (error) {
     console.error('Error fetching events from Google Sheets:', error);

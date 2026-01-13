@@ -177,9 +177,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
       if (result.type === 'success') {
-        const urlParams = new URL(result.url);
-        const accessToken = urlParams.searchParams.get('access_token');
-        const refreshToken = urlParams.searchParams.get('refresh_token');
+        // Parse tokens from URL hash fragment (e.g., #access_token=...&refresh_token=...)
+        const url = result.url;
+        const hashParams = new URLSearchParams(url.split('#')[1] || '');
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+
+        console.log('OAuth result URL:', url);
+        console.log('Access token found:', !!accessToken);
+        console.log('Refresh token found:', !!refreshToken);
 
         if (accessToken && refreshToken) {
           const { error: sessionError } = await supabase.auth.setSession({
@@ -192,7 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw sessionError;
           }
         } else {
-          console.error('No tokens found in callback URL');
+          console.error('No tokens found in callback URL:', url);
           throw new Error('No authentication tokens received');
         }
       } else if (result.type === 'cancel') {
