@@ -81,17 +81,16 @@ export function EventTaskList({
           >
             <View style={[
               styles.checkbox,
-              { borderColor: taskColor },
               isDisabled && styles.checkboxDisabled
             ]}>
               {assignedTasks.has(task.id) && (
-                <Text style={[styles.checkboxChecked, { color: taskColor }]}>✓</Text>
+                <Text style={styles.checkboxChecked}>✓</Text>
               )}
             </View>
             <View style={styles.crewTaskTextContainer}>
               <Text style={[
                 styles.crewTaskText,
-                assignedTasks.has(task.id) && { color: taskColor, fontWeight: '600' },
+                assignedTasks.has(task.id) && { fontWeight: '600' },
                 isDisabled && styles.crewTaskTextDisabled
               ]}>
                 {task.label}
@@ -111,8 +110,7 @@ export function EventTaskList({
                       key={idx}
                       style={[
                         styles.crewTaskUsername,
-                        { color: taskColor },
-                        username === discordUsername && { fontWeight: '600' },
+                        username === discordUsername && styles.crewTaskUsernameHighlight,
                         isDisabled && styles.crewTaskTextDisabled
                       ]}
                     >
@@ -185,6 +183,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
+    borderColor: colors.textSecondary,
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -192,6 +191,7 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: colors.textPrimary,
   },
   crewTaskTextContainer: {
     flex: 1,
@@ -211,6 +211,11 @@ const styles = StyleSheet.create({
   crewTaskUsername: {
     ...microknightText.xs,
     fontStyle: 'italic',
+    color: colors.textTertiary,
+  },
+  crewTaskUsernameHighlight: {
+    color: '#30d158',
+    fontWeight: '600',
   },
   crewTaskItemDisabled: {
     opacity: 0.4,
