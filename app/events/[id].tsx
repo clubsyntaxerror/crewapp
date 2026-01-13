@@ -1,25 +1,20 @@
 import { colors } from '@/constants/colors';
-import { COMMITMENT_EMOJIS, EMOJI_PROGRESSION, EMOJI_THRESHOLDS, TIMING } from '@/constants/gameplay';
 import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
-import { fetchEvents, fetchTaskList, openMapLocation } from '@/lib/google-sheets';
-import {
-  fetchEventTaskAssignments,
-  fetchUserEventTaskAssignments,
-  getAbsentTaskId,
-  isAbsentTask,
-  saveUserTaskAssignments,
-  TaskAssignment,
-} from '@/lib/task-assignments';
-import { CrewTask, Event } from '@/lib/types';
+import { useEventDetails } from '@/hooks/useEventDetails';
+import { useTaskToggle } from '@/hooks/useTaskToggle';
+import { EventTaskList } from '@/components/EventTaskList';
+import { EventDetailsSection } from '@/components/EventDetailsSection';
+import { MissingFieldsAlert } from '@/components/MissingFieldsAlert';
+import { getMissingEventFields } from '@/lib/event-validation';
+import { fetchEventTaskAssignments } from '@/lib/task-assignments';
 import { format } from 'date-fns';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -27,82 +22,35 @@ import {
   View,
 } from 'react-native';
 
-interface TaskItem {
-  label: string;
-  completed: boolean;
-}
-
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { hasRequiredRole, discordUsername } = useAuth();
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
-  const [assignedTasks, setAssignedTasks] = useState<Set<string>>(new Set());
-  const [crewTasks, setCrewTasks] = useState<CrewTask[]>([]);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [allAssignments, setAllAssignments] = useState<TaskAssignment[]>([]);
 
-  // Get usernames for a specific task
-  const getUsernamesForTask = (taskId: string): string[] => {
-    const usernames = allAssignments
-      .filter((a) => a.task_id === taskId && a.username)
-      .map((a) => a.username!);
+  const {
+    event,
+    loading,
+    crewTasks,
+    assignedTasks,
+    setAssignedTasks,
+    setAllAssignments,
+    getUsernamesForTask,
+  } = useEventDetails(id);
 
-    // Remove duplicates
-    return [...new Set(usernames)];
-  };
-
-  const toggleTask = (taskId: string) => {
-    if (!event) return;
-    const isPast = event.endDate.getTime() < Date.now();
-    if (isPast) return;
-
-    setAssignedTasks((prev) => {
-      const newSet = new Set(prev);
-      const absentTaskId = getAbsentTaskId(crewTasks);
-
-      // If toggling the absent task
-      if (taskId === absentTaskId) {
-        if (newSet.has(taskId)) {
-          // Unchecking absent - just remove it
-          newSet.delete(taskId);
-        } else {
-          // Checking absent - clear all other tasks and add only absent
-          newSet.clear();
-          newSet.add(taskId);
-        }
-      } else {
-        // Toggling a regular task
-        if (newSet.has(taskId)) {
-          newSet.delete(taskId);
-        } else {
-          // Remove absent if present, then add the task
-          if (absentTaskId) {
-            newSet.delete(absentTaskId);
-          }
-          newSet.add(taskId);
-        }
-      }
-
-      // Auto-save after state update
-      saveAssignments(newSet);
-
-      return newSet;
-    });
-  };
-
-  useEffect(() => {
-    loadEvent();
-  }, [id]);
+  const { toggleTask, saveStatus, saveError } = useTaskToggle(
+    event,
+    crewTasks,
+    assignedTasks,
+    setAssignedTasks,
+    setAllAssignments,
+    discordUsername
+  );
 
   // Set up real-time subscription for task assignments
   useTaskAssignmentSync({
     eventId: event?.eventId,
     onUpdate: async () => {
       if (!event?.eventId) return;
-
       try {
         const eventAssignments = await fetchEventTaskAssignments(event.eventId);
         setAllAssignments(eventAssignments);
@@ -111,103 +59,6 @@ export default function EventDetails() {
       }
     },
   });
-
-  const loadEvent = async () => {
-    try {
-      const events = await fetchEvents();
-      const found = events.find((e) => e.eventId === id);
-      setEvent(found || null);
-
-      if (found) {
-        // Load task list for this event
-        const tasks = await fetchTaskList(found.taskListName);
-        setCrewTasks(tasks);
-
-        // Load user's saved task assignments
-        try {
-          const savedAssignments = await fetchUserEventTaskAssignments(found.eventId);
-          const savedTaskIds = new Set(savedAssignments.map((a) => a.task_id));
-          setAssignedTasks(savedTaskIds);
-        } catch (error) {
-          console.error('Error loading saved task assignments:', error);
-          // Don't fail the whole load if assignments fail
-        }
-
-        // Load all assignments for this event to show who's doing what
-        try {
-          const eventAssignments = await fetchEventTaskAssignments(found.eventId);
-          setAllAssignments(eventAssignments);
-        } catch (error) {
-          console.error('Error loading event assignments:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading event:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getCommitmentEmoji = () => {
-    const absentTaskId = getAbsentTaskId(crewTasks);
-    if (absentTaskId && assignedTasks.has(absentTaskId)) {
-      return COMMITMENT_EMOJIS.ABSENT;
-    }
-
-    const selectedCount = Array.from(assignedTasks).filter(
-      (taskId) => taskId !== absentTaskId
-    ).length;
-
-    const totalTasks = crewTasks.length - 1; // Exclude absent task
-    const isSmallList = totalTasks <= EMOJI_THRESHOLDS.SMALL_TASK_LIST_MAX;
-    const progression = isSmallList ? EMOJI_PROGRESSION.small : EMOJI_PROGRESSION.large;
-
-    // For small lists, if user selected ALL tasks, treat as max tier (Infinity)
-    const effectiveCount = isSmallList && selectedCount === totalTasks && selectedCount > 0
-      ? Infinity
-      : selectedCount;
-
-    // Lookup emoji from progression table
-    const tier = progression.find(({ min, max }) =>
-      effectiveCount >= min && effectiveCount <= max
-    );
-
-    return tier?.emoji ?? '';
-  };
-
-  const saveAssignments = async (taskSet: Set<string>) => {
-    if (!event) return;
-
-    setSaveStatus('saving');
-    setSaveError(null);
-
-    try {
-      // Get the selected tasks (with full details)
-      const selectedTasks = crewTasks.filter((task) => taskSet.has(task.id));
-
-      // Save to Supabase with event context
-      await saveUserTaskAssignments(
-        event.eventId,
-        event.taskListName || 'H62',
-        selectedTasks,
-        event.title,
-        event.startDate,
-        discordUsername || undefined
-      );
-
-      // Reload all assignments to update the display
-      const eventAssignments = await fetchEventTaskAssignments(event.eventId);
-      setAllAssignments(eventAssignments);
-
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), TIMING.SAVE_SUCCESS_DISPLAY);
-    } catch (error) {
-      console.error('Error saving task assignments:', error);
-      setSaveStatus('error');
-      setSaveError(STRINGS.ERRORS.SAVE_FAILED);
-      setTimeout(() => setSaveStatus('idle'), TIMING.SAVE_ERROR_DISPLAY);
-    }
-  };
 
   if (loading) {
     return (
@@ -228,42 +79,8 @@ export default function EventDetails() {
   const startDate = format(event.startDate, 'EEEE, MMMM dd, yyyy');
   const startTime = format(event.startDate, 'HH:mm');
   const endTime = format(event.endDate, 'HH:mm');
-
-  const isNumeric = (value: string | undefined): boolean => {
-    if (!value) return false;
-    return /^\d+/.test(value.trim());
-  };
-
-  const getTasks = (): TaskItem[] => {
-    const tasks: TaskItem[] = [];
-
-    if (!event.ticketsUrl) {
-      tasks.push({ label: 'Tickets site', completed: false });
-    }
-    if (!event.facebookUrl) {
-      tasks.push({ label: 'Facebook event', completed: false });
-    }
-    if (!event.coverFee || !isNumeric(event.coverFee)) {
-      tasks.push({ label: 'Cover fee', completed: false });
-    }
-    if (!event.venueName) {
-      tasks.push({ label: 'Venue', completed: false });
-    }
-    if (!event.description) {
-      tasks.push({ label: 'Description', completed: false });
-    }
-    if (!event.streetAddress) {
-      tasks.push({ label: 'Address', completed: false });
-    }
-
-    return tasks;
-  };
-
-  const tasks = getTasks();
+  const missingFields = getMissingEventFields(event);
   const isPastEvent = event.endDate.getTime() < Date.now();
-
-  // Rainbow colors for crew tasks
-  const rainbowColors = colors.rainbow;
 
   return (
     <>
@@ -290,120 +107,19 @@ export default function EventDetails() {
           </Text>
         </View>
 
-        {hasRequiredRole && tasks.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{STRINGS.EVENT.TASKS_MISSING}</Text>
-            {tasks.map((task, index) => (
-              <View key={index} style={styles.taskItem}>
-                <Text style={styles.taskBullet}>•</Text>
-                <Text style={styles.taskText}>{task.label}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {hasRequiredRole && <MissingFieldsAlert missingFields={missingFields} />}
 
         {hasRequiredRole ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {isPastEvent ? STRINGS.EVENT.TASKS_TITLE_ENDED : STRINGS.EVENT.TASKS_TITLE_ACTIVE}
-            </Text>
-            {crewTasks.map((task, index) => {
-              const taskIsAbsent = isAbsentTask(task, crewTasks);
-              const absentTaskId = getAbsentTaskId(crewTasks);
-              const isAbsentChecked = absentTaskId ? assignedTasks.has(absentTaskId) : false;
-              const isDisabled = isPastEvent || (!taskIsAbsent && isAbsentChecked);
-              const usernames = getUsernamesForTask(task.id);
-              const taskColor = rainbowColors[index % rainbowColors.length];
-
-              return (
-                <Pressable
-                  key={task.id}
-                  style={[
-                    styles.crewTaskItem,
-                    { backgroundColor: taskColor + '20' }, // 20 is 12.5% opacity in hex
-                    isDisabled && styles.crewTaskItemDisabled
-                  ]}
-                  onPress={() => !isDisabled && toggleTask(task.id)}
-                  disabled={isDisabled}
-                >
-                  <View style={[
-                    styles.checkbox,
-                    { borderColor: taskColor },
-                    isDisabled && styles.checkboxDisabled
-                  ]}>
-                    {assignedTasks.has(task.id) && (
-                      <Text style={[styles.checkboxChecked, { color: taskColor }]}>✓</Text>
-                    )}
-                  </View>
-                  <View style={styles.crewTaskTextContainer}>
-                    <Text style={[
-                      styles.crewTaskText,
-                      assignedTasks.has(task.id) && { color: taskColor, fontWeight: '600' },
-                      isDisabled && styles.crewTaskTextDisabled
-                    ]}>
-                      {task.label}
-                    </Text>
-                    {task.description && (
-                      <Text style={[
-                        styles.crewTaskDescription,
-                        isDisabled && styles.crewTaskTextDisabled
-                      ]}>
-                        {task.description}
-                      </Text>
-                    )}
-                    {usernames.length > 0 && (
-                      <Text style={styles.crewTaskUsernamesContainer}>
-                        {usernames.map((username, idx) => (
-                          <Text
-                            key={idx}
-                            style={[
-                              styles.crewTaskUsername,
-                              { color: taskColor },
-                              username === discordUsername && { fontWeight: '600' },
-                              isDisabled && styles.crewTaskTextDisabled
-                            ]}
-                          >
-                            {username}{idx < usernames.length - 1 ? ', ' : ''}
-                          </Text>
-                        ))}
-                      </Text>
-                    )}
-                  </View>
-                </Pressable>
-              );
-            })}
-
-            {!isPastEvent && (
-              <View style={styles.statusContainer}>
-                {/* Commitment emoji centered */}
-                {getCommitmentEmoji() && (
-                  <Text style={styles.commitmentEmoji}>{getCommitmentEmoji()}</Text>
-                )}
-
-                {/* Save status indicators on the right */}
-                {saveStatus === 'saving' && (
-                  <View style={styles.statusBadge}>
-                    <ActivityIndicator size="small" color={colors.textTertiary} />
-                    <Text style={styles.statusText}>{STRINGS.STATUS.SAVING}</Text>
-                  </View>
-                )}
-                {saveStatus === 'saved' && (
-                  <View style={[styles.statusBadge, styles.statusBadgeSuccess]}>
-                    <Text style={styles.statusIcon}>✓</Text>
-                    <Text style={[styles.statusText, styles.statusTextSuccess]}>{STRINGS.STATUS.SAVED}</Text>
-                  </View>
-                )}
-                {saveStatus === 'error' && (
-                  <View style={[styles.statusBadge, styles.statusBadgeError]}>
-                    <Text style={styles.statusIcon}>!</Text>
-                    <Text style={[styles.statusText, styles.statusTextError]}>
-                      {saveError || STRINGS.STATUS.ERROR_SAVING}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
+          <EventTaskList
+            crewTasks={crewTasks}
+            assignedTasks={assignedTasks}
+            isPastEvent={isPastEvent}
+            discordUsername={discordUsername}
+            getUsernamesForTask={getUsernamesForTask}
+            onToggleTask={toggleTask}
+            saveStatus={saveStatus}
+            saveError={saveError}
+          />
         ) : (
           <View style={styles.section}>
             <View style={styles.unauthorizedContainer}>
@@ -429,81 +145,7 @@ export default function EventDetails() {
           </Pressable>
         )}
 
-        {(showDetails || !hasRequiredRole) && (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{STRINGS.EVENT.VENUE_TITLE}</Text>
-              <Text style={styles.venue}>{event.venueName}</Text>
-              {event.streetAddress && (
-                <>
-                  <Text style={styles.address}>{event.streetAddress}</Text>
-                  <Pressable
-                    style={styles.mapButton}
-                    onPress={() => openMapLocation(event.streetAddress!, event.venueName)}
-                  >
-                    <Text style={styles.mapButtonText}>{STRINGS.EVENT.MAP_BUTTON}</Text>
-                  </Pressable>
-                </>
-              )}
-            </View>
-
-            {event.description && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{STRINGS.EVENT.DESCRIPTION_TITLE}</Text>
-                <Text style={styles.description}>{event.description}</Text>
-              </View>
-            )}
-
-            {event.coverFee && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Entry Fee</Text>
-                <Text style={styles.info}>{event.coverFee}</Text>
-              </View>
-            )}
-
-            {event.ageLimit && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Age Limit</Text>
-                <Text style={styles.info}>{event.ageLimit}</Text>
-              </View>
-            )}
-
-            {(event.payingGuests !== undefined ||
-              event.nonPayingGuests !== undefined) && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Expected Attendance</Text>
-                {event.payingGuests !== undefined && (
-                  <Text style={styles.info}>Paying guests: {event.payingGuests}</Text>
-                )}
-                {event.nonPayingGuests !== undefined && (
-                  <Text style={styles.info}>
-                    Non-paying guests: {event.nonPayingGuests}
-                  </Text>
-                )}
-              </View>
-            )}
-
-            {event.ticketsUrl && (
-              <Pressable
-                style={styles.ticketsButton}
-                onPress={() => Linking.openURL(event.ticketsUrl!)}
-              >
-                <Text style={styles.ticketsButtonText}>
-                  {event.ticketsTitle || STRINGS.EVENT.TICKETS_BUTTON}
-                </Text>
-              </Pressable>
-            )}
-
-            {event.facebookUrl && (
-              <Pressable
-                style={styles.button}
-                onPress={() => Linking.openURL(event.facebookUrl!)}
-              >
-                <Text style={styles.buttonText}>View Facebook Event</Text>
-              </Pressable>
-            )}
-          </>
-        )}
+        {(showDetails || !hasRequiredRole) && <EventDetailsSection event={event} />}
       </ScrollView>
     </>
   );
@@ -546,90 +188,9 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 12,
   },
-  sectionTitle: {
-    ...microknightText.base,
-    fontWeight: '600',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
-  venue: {
-    ...microknightText.xl,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  address: {
-    ...microknightText.md,
-    color: colors.textTertiary,
-    marginTop: 4,
-  },
-  mapButton: {
-    backgroundColor: colors.success,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  mapButtonText: {
-    ...microknightText.base,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  description: {
-    ...microknightText.md,
-    color: colors.textSecondary,
-  },
-  info: {
-    ...microknightText.md,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  ticketsButton: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    margin: 20,
-    marginBottom: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  ticketsButtonText: {
-    ...microknightText.md,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    margin: 20,
-    marginTop: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    ...microknightText.md,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
   error: {
     ...microknightText.md,
     color: colors.error,
-  },
-  taskItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  taskBullet: {
-    ...microknightText.md,
-    color: colors.error,
-    marginRight: 8,
-  },
-  taskText: {
-    ...microknightText.base,
-    flex: 1,
-    color: colors.textSecondary,
   },
   detailsToggle: {
     backgroundColor: colors.cardBackground,
@@ -646,95 +207,6 @@ const styles = StyleSheet.create({
   detailsToggleIcon: {
     ...microknightText.sm,
     color: colors.primary,
-  },
-  crewTaskItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  crewTaskTextContainer: {
-    flex: 1,
-  },
-  crewTaskText: {
-    ...microknightText.md,
-    color: colors.textSecondary,
-  },
-  crewTaskDescription: {
-    ...microknightText.sm,
-    color: colors.textTertiary,
-    marginTop: 2,
-  },
-  crewTaskUsernamesContainer: {
-    marginTop: 4,
-  },
-  crewTaskUsername: {
-    ...microknightText.xs,
-    fontStyle: 'italic',
-  },
-  crewTaskItemDisabled: {
-    opacity: 0.4,
-  },
-  checkboxDisabled: {
-    borderColor: colors.textTertiary,
-  },
-  crewTaskTextDisabled: {
-    color: colors.textTertiary,
-  },
-  statusContainer: {
-    marginTop: 12,
-    minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  commitmentEmoji: {
-    fontSize: 32,
-  },
-  statusBadge: {
-    position: 'absolute',
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: colors.modalBackground,
-  },
-  statusBadgeSuccess: {
-    backgroundColor: 'rgba(48, 209, 88, 0.15)',
-  },
-  statusBadgeError: {
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
-  },
-  statusIcon: {
-    ...microknightText.base,
-    marginRight: 6,
-  },
-  statusText: {
-    ...microknightText.sm,
-    color: colors.textTertiary,
-  },
-  statusTextSuccess: {
-    color: colors.success,
-  },
-  statusTextError: {
-    color: colors.error,
   },
   unauthorizedContainer: {
     alignItems: 'center',
