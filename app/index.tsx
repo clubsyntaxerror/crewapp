@@ -4,9 +4,9 @@ import { colors } from '@/constants/colors';
 import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEvents } from '@/contexts/EventsContext';
 import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
-import { fetchEvents, isFutureEvent, isPastEvent } from '@/lib/google-sheets';
-import { Event } from '@/lib/types';
+import { isFutureEvent, isPastEvent } from '@/lib/google-sheets';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
@@ -15,9 +15,7 @@ type FilterType = 'upcoming' | 'past' | 'all';
 
 export default function Index() {
   const { discordUsername, discordAvatar, signOut } = useAuth();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { events, loading, error, loadEvents } = useEvents();
   const [filter, setFilter] = useState<FilterType>('upcoming');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -58,20 +56,6 @@ export default function Index() {
       setStatsRefreshTrigger((prev) => prev + 1);
     },
   });
-
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchEvents();
-      setEvents(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load events');
-      console.error('Error loading events:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (

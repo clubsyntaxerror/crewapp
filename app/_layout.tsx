@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { EventsProvider } from '@/contexts/EventsContext';
 import { ActivityIndicator, View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
@@ -66,7 +67,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <EventsProvider>
+        <RootLayoutNav />
+      </EventsProvider>
     </AuthProvider>
   );
 }
