@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   crewTaskItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,

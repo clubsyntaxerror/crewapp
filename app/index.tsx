@@ -7,8 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
 import { isFutureEvent, isPastEvent } from '@/lib/google-sheets';
-import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 
 type FilterType = 'upcoming' | 'past' | 'all';
@@ -49,6 +49,13 @@ export default function Index() {
   useEffect(() => {
     loadEvents();
   }, []);
+
+  // Refresh stats when screen comes back into focus (e.g., after navigating back from event detail)
+  useFocusEffect(
+    useCallback(() => {
+      setStatsRefreshTrigger((prev) => prev + 1);
+    }, [])
+  );
 
   // Set up real-time subscription for task assignments across all events
   useTaskAssignmentSync({

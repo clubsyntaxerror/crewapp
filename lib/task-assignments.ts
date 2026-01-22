@@ -171,6 +171,7 @@ export interface EventSignupStats {
   participating: number; // Users with at least one non-absent task
   absent: number; // Users marked as absent
   total: number; // Total unique users who responded
+  totalTasks: number; // Total tasks checked (excluding absent)
 }
 
 /**
@@ -194,18 +195,20 @@ export async function getEventSignupStats(
 
   let participating = 0;
   let absent = 0;
+  let totalTasks = 0;
 
   // Count users based on their task selections
   for (const taskIds of userAssignments.values()) {
     const hasAbsent = taskIds.has('absent');
-    const hasOtherTasks = Array.from(taskIds).some((id) => id !== 'absent');
+    const nonAbsentTasks = Array.from(taskIds).filter((id) => id !== 'absent');
 
-    if (hasAbsent && !hasOtherTasks) {
+    if (hasAbsent && nonAbsentTasks.length === 0) {
       // User only has absent task
       absent++;
-    } else if (hasOtherTasks) {
+    } else if (nonAbsentTasks.length > 0) {
       // User has at least one non-absent task
       participating++;
+      totalTasks += nonAbsentTasks.length;
     }
   }
 
@@ -213,5 +216,6 @@ export async function getEventSignupStats(
     participating,
     absent,
     total: userAssignments.size,
+    totalTasks,
   };
 }

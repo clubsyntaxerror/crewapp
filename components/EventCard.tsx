@@ -1,12 +1,12 @@
-import { colors } from '@/constants/colors';
-import { microknightText } from '@/constants/typography';
-import { useAuth } from '@/contexts/AuthContext';
-import { EventSignupStats, getEventSignupStats } from '@/lib/task-assignments';
-import { Event } from '@/lib/types';
-import { format } from 'date-fns';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors } from "@/constants/colors";
+import { microknightText } from "@/constants/typography";
+import { useAuth } from "@/contexts/AuthContext";
+import { EventSignupStats, getEventSignupStats } from "@/lib/task-assignments";
+import { Event } from "@/lib/types";
+import { format } from "date-fns";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface EventCardProps {
   event: Event;
@@ -14,11 +14,15 @@ interface EventCardProps {
   accentColor?: string;
 }
 
-export function EventCard({ event, refreshTrigger, accentColor = colors.primary }: EventCardProps) {
+export function EventCard({
+  event,
+  refreshTrigger,
+  accentColor = colors.primary,
+}: EventCardProps) {
   const router = useRouter();
   const { hasRequiredRole } = useAuth();
   const [stats, setStats] = useState<EventSignupStats | null>(null);
-  const startDate = format(event.startDate, 'MMMM dd, yyyy');
+  const startDate = format(event.startDate, "MMMM dd, yyyy");
 
   useEffect(() => {
     loadStats();
@@ -29,14 +33,14 @@ export function EventCard({ event, refreshTrigger, accentColor = colors.primary 
       const eventStats = await getEventSignupStats(event.eventId);
       setStats(eventStats);
     } catch (error) {
-      console.error('Error loading event stats:', error);
+      console.error("Error loading event stats:", error);
       // Don't block rendering if stats fail to load
     }
   };
 
   const handlePress = () => {
     router.push({
-      pathname: '/events/[id]',
+      pathname: "/events/[id]",
       params: { id: event.eventId },
     });
   };
@@ -46,7 +50,7 @@ export function EventCard({ event, refreshTrigger, accentColor = colors.primary 
       style={({ pressed }) => [
         styles.card,
         { borderLeftColor: accentColor },
-        pressed && styles.cardPressed
+        pressed && styles.cardPressed,
       ]}
       onPress={handlePress}
     >
@@ -61,13 +65,27 @@ export function EventCard({ event, refreshTrigger, accentColor = colors.primary 
           <View style={styles.statsInfo}>
             {stats.participating > 0 && (
               <View style={styles.statItem}>
-                <Text style={[styles.statEmoji, { textShadowColor: `${accentColor}99` }]}>💪</Text>
+                <Text
+                  style={[
+                    styles.statEmoji,
+                    { textShadowColor: `${accentColor}99` },
+                  ]}
+                >
+                  💪
+                </Text>
                 <Text style={styles.statNumber}>{stats.participating}</Text>
               </View>
             )}
             {stats.absent > 0 && (
               <View style={styles.statItem}>
-                <Text style={[styles.statEmoji, { textShadowColor: `${accentColor}99` }]}>🏝️</Text>
+                <Text
+                  style={[
+                    styles.statEmoji,
+                    { textShadowColor: `${accentColor}99` },
+                  ]}
+                >
+                  🏝️
+                </Text>
                 <Text style={styles.statNumber}>{stats.absent}</Text>
               </View>
             )}
@@ -96,9 +114,9 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   cardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   mainInfo: {
     flex: 1,
@@ -108,8 +126,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   statEmoji: {
@@ -119,12 +137,12 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     ...microknightText.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
   },
   title: {
     ...microknightText.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
     color: colors.textPrimary,
   },
