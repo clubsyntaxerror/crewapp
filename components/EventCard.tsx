@@ -7,17 +7,20 @@ import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { RainbowText } from "./RainbowText";
 
 interface EventCardProps {
   event: Event;
   refreshTrigger?: number;
   accentColor?: string;
+  rainbowTitle?: boolean;
 }
 
 export function EventCard({
   event,
   refreshTrigger,
   accentColor = colors.primary,
+  rainbowTitle = false,
 }: EventCardProps) {
   const router = useRouter();
   const { hasRequiredRole } = useAuth();
@@ -56,7 +59,13 @@ export function EventCard({
     >
       <View style={styles.cardContent}>
         <View style={styles.mainInfo}>
-          <Text style={styles.title}>{event.title}</Text>
+          {rainbowTitle ? (
+            <View style={styles.titleContainer}>
+              <RainbowText style={styles.title}>{event.title}</RainbowText>
+            </View>
+          ) : (
+            <Text style={styles.title}>{event.title}</Text>
+          )}
           <Text style={styles.date}>{startDate}</Text>
           <Text style={styles.venue}>{event.venueName}</Text>
         </View>
@@ -139,6 +148,9 @@ const styles = StyleSheet.create({
     ...microknightText.md,
     fontWeight: "600",
     color: colors.textPrimary,
+  },
+  titleContainer: {
+    marginBottom: 4,
   },
   title: {
     ...microknightText.lg,
