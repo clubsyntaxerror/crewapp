@@ -1,3 +1,6 @@
+list of usernames color-coded by crew (orange) and volunteer (yellow) just like in Discord
+fix react native warnings about shadows by removing them everywhere
+app icon larger margins
 calendar icon for the date in eventcard
 location icon for venue name in eventcard
 icons as above in the event details view as well
@@ -11,4 +14,3 @@ facebook blue color for facebook button background
 website purple background color for tickets button
 open in maps button background color perhaps gray or something
 use the retry strategy on all loading events / calls
-screen transitions
