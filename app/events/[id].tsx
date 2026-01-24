@@ -1,20 +1,20 @@
+import { AppLoadingScreen } from '@/components/AppLoadingScreen';
+import { EventDetailsSection } from '@/components/EventDetailsSection';
+import { EventTaskList } from '@/components/EventTaskList';
+import { MissingFieldsAlert } from '@/components/MissingFieldsAlert';
 import { colors } from '@/constants/colors';
 import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
 import { useEventDetails } from '@/hooks/useEventDetails';
+import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
 import { useTaskToggle } from '@/hooks/useTaskToggle';
-import { EventTaskList } from '@/components/EventTaskList';
-import { EventDetailsSection } from '@/components/EventDetailsSection';
-import { MissingFieldsAlert } from '@/components/MissingFieldsAlert';
 import { getMissingEventFields } from '@/lib/event-validation';
 import { fetchEventTaskAssignments } from '@/lib/task-assignments';
 import { format } from 'date-fns';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -61,11 +61,7 @@ export default function EventDetails() {
   });
 
   if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.info} />
-      </View>
-    );
+    return <AppLoadingScreen message={STRINGS.LOADING.LOADING_EVENT_DETAILS} />;
   }
 
   if (!event) {

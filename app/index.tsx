@@ -46,9 +46,12 @@ export default function Index() {
     }
   };
 
+  // Events are preloaded after auth, only reload if not already loaded
   useEffect(() => {
-    loadEvents();
-  }, []);
+    if (events.length === 0 && !loading) {
+      loadEvents();
+    }
+  }, [events.length, loading, loadEvents]);
 
   // Refresh stats when screen comes back into focus (e.g., after navigating back from event detail)
   useFocusEffect(

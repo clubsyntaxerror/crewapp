@@ -16,7 +16,7 @@ This guide will walk you through setting up Discord OAuth authentication with ro
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Click **"New Application"**
-3. Name it (e.g., "Crew App" or "Club Syntax Error Crew")
+3. Name it (e.g., "Crew App" or "Syntax Error Events")
 4. Click **"Create"**
 
 ### 1.2 Get OAuth Credentials
@@ -40,6 +40,7 @@ This guide will walk you through setting up Discord OAuth authentication with ro
 ### 1.4 Configure Scopes (in Supabase, not Discord Portal)
 
 The required OAuth scopes are:
+
 - `identify` - Get user ID, username, avatar
 - `email` - Get user email
 - `guilds.members.read` - Read user's guild memberships and roles
@@ -142,6 +143,7 @@ DISCORD_BOT_TOKEN=your_discord_bot_token_here
 ## Step 6: Verify Your Discord Roles
 
 The app checks for these Discord roles (case-insensitive):
+
 - `crew`
 - `volunteer`
 - `admin`
@@ -150,6 +152,7 @@ The app checks for these Discord roles (case-insensitive):
 Make sure these roles exist in your Discord server and are assigned to the appropriate members.
 
 To check/create roles:
+
 1. In Discord, right-click your server → **Server Settings**
 2. Go to **Roles**
 3. Verify the roles exist with these exact names
@@ -175,6 +178,7 @@ Before running the app, verify you have:
 ## Next Steps
 
 Once all configuration is complete, the app will:
+
 1. Require Discord login before showing any content
 2. Fetch user's roles from your Discord server
 3. Only show task management UI to users with: crew, volunteer, admin, or alumni roles
@@ -186,20 +190,24 @@ Once all configuration is complete, the app will:
 ## Troubleshooting
 
 ### "Invalid redirect_uri"
+
 - Verify the redirect URI in Discord OAuth settings matches your Supabase project URL exactly
 - Format: `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
 
 ### "Missing Access" or bot can't see roles
+
 - Ensure Server Members Intent is enabled in Discord Bot settings
 - Verify the bot has been invited to your Discord server
 - Check that the bot has "View Channels" permission
 
 ### Roles not being detected
+
 - Verify role names match exactly: `crew`, `volunteer`, `admin`, or `alumni` (case-insensitive)
 - Ensure the user is actually a member of your Discord server
 - Check that `guilds.members.read` scope is enabled in Supabase Discord provider
 
 ### Environment variables not loading
+
 - Restart the Expo development server after changing `.env.local`
 - Ensure variable names start with `EXPO_PUBLIC_` for client-side access
-- Private variables (DISCORD_BOT_TOKEN, DISCORD_CLIENT_SECRET) should NOT have `EXPO_PUBLIC_` prefix
+- Private variables (DISCORD*BOT_TOKEN, DISCORD_CLIENT_SECRET) should NOT have `EXPO_PUBLIC*` prefix

@@ -1,3 +1,4 @@
+import { STRINGS } from '@/constants/strings';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
@@ -25,6 +26,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  loadingMessage: string | null;
   hasRequiredRole: boolean;
   userRoles: string[];
   discordUsername: string | null;
@@ -37,6 +39,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   loading: true,
+  loadingMessage: null,
   hasRequiredRole: false,
   userRoles: [],
   discordUsername: null,
@@ -57,42 +60,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState<string | null>(STRINGS.LOADING.AUTHENTICATING);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [hasRequiredRole, setHasRequiredRole] = useState(false);
 
-  // Fetch user's Discord roles from Supabase Edge Function
-  const fetchUserRoles = async (userId: string) => {
+  // Fetch with timeout helper
+  const fetchWithTimeout = async (
+    url: string,
+    options: RequestInit,
+    timeoutMs: number = 10000
+  ): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-      if (!currentSession?.access_token) {
-        console.error('No access token available');
-        return [];
-      }
-
-      const functionUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/get-discord-roles`;
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`,
-          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-        },
-        body: JSON.stringify({ userId }),
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
       });
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
 
-      const responseData = await response.json();
+  // Fetch user's Discord roles from Supabase Edge Function
+  const fetchUserRoles = async (userId: string, retries: number = 2): Promise<string[]> => {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-      if (!response.ok) {
-        console.error('Error fetching Discord roles:', responseData);
-        return [];
-      }
-
-      return responseData?.roles || [];
-    } catch (error) {
-      console.error('Error fetching Discord roles:', error);
+    if (!currentSession?.access_token) {
+      console.error('No access token available');
       return [];
     }
+
+    const functionUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/get-discord-roles`;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetchWithTimeout(
+          functionUrl,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`,
+              'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+            },
+            body: JSON.stringify({ userId }),
+          },
+          10000 // 10 second timeout
+        );
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+          console.error('Error fetching Discord roles:', responseData);
+          // Don't retry on auth errors (4xx)
+          if (response.status >= 400 && response.status < 500) {
+            return [];
+          }
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        return responseData?.roles || [];
+      } catch (error) {
+        const isLastAttempt = attempt === retries;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isAborted = error instanceof Error && error.name === 'AbortError';
+
+        console.error(
+          `Error fetching Discord roles (attempt ${attempt + 1}/${retries + 1}):`,
+          isAborted ? 'Request timed out' : errorMessage
+        );
+
+        if (isLastAttempt) {
+          console.warn('All retries exhausted, continuing without roles');
+          return [];
+        }
+
+        // Wait before retrying (exponential backoff: 1s, 2s)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+    }
+
+    return [];
   };
 
   // Check if user has any of the required roles
@@ -104,21 +155,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    setLoadingMessage(STRINGS.LOADING.AUTHENTICATING);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
         fetchUserRoles(session.user.id).then(roles => {
           setUserRoles(roles);
           setHasRequiredRole(checkRequiredRole(roles));
+          setLoadingMessage(null);
           setLoading(false);
         });
       } else {
+        setLoadingMessage(null);
         setLoading(false);
       }
     }).catch(err => {
       console.error('Error getting initial session:', err);
+      setLoadingMessage(null);
       setLoading(false);
     });
 
@@ -128,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
           const roles = await fetchUserRoles(session.user.id);
           setUserRoles(roles);
           setHasRequiredRole(checkRequiredRole(roles));
@@ -136,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setHasRequiredRole(false);
         }
 
+        setLoadingMessage(null);
         setLoading(false);
       }
     );
@@ -188,15 +246,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Refresh token found:', !!refreshToken);
 
         if (accessToken && refreshToken) {
+          // Set loading to true while we establish the session
+          setLoading(true);
+
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
           if (sessionError) {
+            setLoading(false);
             console.error('Error setting session:', sessionError);
             throw sessionError;
           }
+
+          // Wait for onAuthStateChange to process the session
+          // The loading state will be set to false there after roles are fetched
+          return;
         } else {
           console.error('No tokens found in callback URL:', url);
           throw new Error('No authentication tokens received');
@@ -234,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     user,
     loading,
+    loadingMessage,
     hasRequiredRole,
     userRoles,
     discordUsername,

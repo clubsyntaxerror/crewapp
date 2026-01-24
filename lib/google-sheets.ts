@@ -24,14 +24,25 @@ interface JWTClaims {
 }
 
 const TOKEN_DURATION = 3600; // 1 hour in seconds
+const TOKEN_REFRESH_BUFFER = 300; // Refresh 5 minutes before expiry
+
+// Cache for Google OAuth access token
+let cachedAccessToken: string | null = null;
+let tokenExpiresAt: number = 0;
 
 /**
  * Generate Google OAuth access token using service account credentials
+ * Caches the token and reuses it until close to expiry
  */
 async function generateAccessToken(
   credentials: ServiceAccountCredentials
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
+
+  // Return cached token if still valid (with buffer for safety)
+  if (cachedAccessToken && tokenExpiresAt > now + TOKEN_REFRESH_BUFFER) {
+    return cachedAccessToken;
+  }
 
   const claims: JWTClaims = {
     iss: credentials.clientEmail,
@@ -62,6 +73,11 @@ async function generateAccessToken(
   }
 
   const data = await response.json();
+
+  // Cache the token
+  cachedAccessToken = data.access_token;
+  tokenExpiresAt = now + TOKEN_DURATION;
+
   return data.access_token;
 }
 

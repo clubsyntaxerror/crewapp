@@ -1,12 +1,16 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { Event, CrewTask } from '@/lib/types';
+import { STRINGS } from '@/constants/strings';
 
 interface EventsContextType {
   events: Event[];
   loading: boolean;
   error: string | null;
+  loadingMessage: string | null;
+  preloaded: boolean;
   loadEvents: () => Promise<void>;
+  preloadData: () => Promise<void>;
   getEventById: (eventId: string) => Event | undefined;
   getTaskList: (taskListName?: string) => Promise<CrewTask[]>;
 }
@@ -20,6 +24,9 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
+  const [preloaded, setPreloaded] = useState(false);
+  const preloadingRef = useRef(false);
 
   const loadEvents = useCallback(async () => {
     try {
@@ -34,6 +41,49 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
+
+  const preloadData = useCallback(async () => {
+    // Prevent multiple simultaneous preloads
+    if (preloadingRef.current || preloaded) return;
+    preloadingRef.current = true;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load events
+      setLoadingMessage(STRINGS.LOADING.LOADING_EVENTS);
+      const eventsData = await fetchEvents();
+      setEvents(eventsData);
+
+      // Preload the default task list (most events use this)
+      setLoadingMessage(STRINGS.LOADING.LOADING_TASKS);
+      const defaultTasks = await fetchTaskList();
+      taskListCache.set('__default__', defaultTasks);
+
+      // Also preload task lists for the first few upcoming events if they have custom lists
+      const upcomingEvents = eventsData
+        .filter((e) => e.startDate.getTime() > Date.now())
+        .slice(0, 3);
+
+      for (const event of upcomingEvents) {
+        if (event.taskListName && !taskListCache.has(event.taskListName)) {
+          const tasks = await fetchTaskList(event.taskListName);
+          taskListCache.set(event.taskListName, tasks);
+        }
+      }
+
+      setLoadingMessage(STRINGS.LOADING.ALMOST_READY);
+      setPreloaded(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+      console.error('Error preloading data:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMessage(null);
+      preloadingRef.current = false;
+    }
+  }, [preloaded]);
 
   const getEventById = useCallback((eventId: string): Event | undefined => {
     return events.find((e) => e.eventId === eventId);
@@ -59,7 +109,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         events,
         loading,
         error,
+        loadingMessage,
+        preloaded,
         loadEvents,
+        preloadData,
         getEventById,
         getTaskList,
       }}

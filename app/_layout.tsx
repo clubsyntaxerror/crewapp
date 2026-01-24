@@ -3,18 +3,29 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { EventsProvider } from '@/contexts/EventsContext';
-import { ActivityIndicator, View } from 'react-native';
+import { EventsProvider, useEvents } from '@/contexts/EventsContext';
+import { AppLoadingScreen } from '@/components/AppLoadingScreen';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { session, loading } = useAuth();
+  const { session, loading: authLoading, loadingMessage: authMessage } = useAuth();
+  const { loading: eventsLoading, loadingMessage: eventsMessage, preloaded, preloadData } = useEvents();
   const segments = useSegments();
   const router = useRouter();
 
+  // Trigger data preloading once authenticated
   useEffect(() => {
-    if (loading) return;
+    if (session && !authLoading && !preloaded) {
+      preloadData();
+    }
+  }, [session, authLoading, preloaded, preloadData]);
+
+  // Handle navigation based on auth state
+  useEffect(() => {
+    if (authLoading) return;
+    // Wait for preloading to complete before navigating
+    if (session && !preloaded) return;
 
     const inAuthGroup = (segments as string[]).includes('login');
 
@@ -25,14 +36,12 @@ function RootLayoutNav() {
       // Redirect to home if authenticated and on login screen
       router.replace('/');
     }
-  }, [session, segments, loading, router]);
+  }, [session, segments, authLoading, preloaded, router]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
+  // Show loading screen during auth or data preloading
+  if (authLoading || (session && !preloaded)) {
+    const message = authMessage || eventsMessage;
+    return <AppLoadingScreen message={message ?? undefined} />;
   }
 
   return (
