@@ -5,7 +5,6 @@ import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/contexts/EventsContext';
-import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
 import { isFutureEvent, isPastEvent } from '@/lib/google-sheets';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,11 +14,11 @@ type FilterType = 'upcoming' | 'past' | 'all';
 
 export default function Index() {
   const { discordUsername, discordAvatar, signOut } = useAuth();
-  const { events, loading, error, loadEvents } = useEvents();
+  const { events, loading, error, loadEvents, taskAssignmentVersion } = useEvents();
   const [filter, setFilter] = useState<FilterType>('upcoming');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
+  const [focusTrigger, setFocusTrigger] = useState(0);
 
   const filteredEvents = events.filter((event) => {
     if (filter === 'upcoming') return isFutureEvent(event);
@@ -56,16 +55,12 @@ export default function Index() {
   // Refresh stats when screen comes back into focus (e.g., after navigating back from event detail)
   useFocusEffect(
     useCallback(() => {
-      setStatsRefreshTrigger((prev) => prev + 1);
+      setFocusTrigger((prev) => prev + 1);
     }, [])
   );
 
-  // Set up real-time subscription for task assignments across all events
-  useTaskAssignmentSync({
-    onUpdate: () => {
-      setStatsRefreshTrigger((prev) => prev + 1);
-    },
-  });
+  // Combine focus trigger with global real-time version for refresh
+  const refreshTrigger = focusTrigger + taskAssignmentVersion;
 
   if (loading) {
     return (
@@ -114,7 +109,7 @@ export default function Index() {
             {nextEvent && (
               <View>
                 <Text style={[styles.sectionHeader, { color: colors.primary }]}>{STRINGS.HOME.NEXT_EVENT}</Text>
-                <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.primary} rainbowTitle />
+                <EventCard event={nextEvent} refreshTrigger={refreshTrigger} accentColor={colors.primary} rainbowTitle />
               </View>
             )}
 
@@ -122,7 +117,7 @@ export default function Index() {
               <View style={styles.futureEventsSection}>
                 <Text style={[styles.sectionHeader, { color: colors.retroBlue }]}>{STRINGS.HOME.FUTURE_EVENTS}</Text>
                 {futureEvents.map((event) => (
-                  <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} accentColor={colors.secondary} titleColor={colors.textSecondary} />
+                  <EventCard key={event.eventId} event={event} refreshTrigger={refreshTrigger} accentColor={colors.secondary} titleColor={colors.textSecondary} />
                 ))}
               </View>
             )}
@@ -131,7 +126,7 @@ export default function Index() {
           <FlatList
             data={filteredEvents}
             keyExtractor={(item) => item.eventId}
-            renderItem={({ item }) => <EventCard event={item} refreshTrigger={statsRefreshTrigger} />}
+            renderItem={({ item }) => <EventCard event={item} refreshTrigger={refreshTrigger} />}
             contentContainerStyle={styles.list}
             ListEmptyComponent={
               <Text style={styles.empty}>{STRINGS.HOME.NO_EVENTS}</Text>

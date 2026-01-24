@@ -6,14 +6,14 @@ import { colors } from '@/constants/colors';
 import { STRINGS } from '@/constants/strings';
 import { microknightText } from '@/constants/typography';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEvents } from '@/contexts/EventsContext';
 import { useEventDetails } from '@/hooks/useEventDetails';
-import { useTaskAssignmentSync } from '@/hooks/useTaskAssignmentSync';
 import { useTaskToggle } from '@/hooks/useTaskToggle';
 import { getMissingEventFields } from '@/lib/event-validation';
-import { fetchEventTaskAssignments } from '@/lib/task-assignments';
+import { fetchEventTaskAssignments, fetchUserEventTaskAssignments } from '@/lib/task-assignments';
 import { format } from 'date-fns';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -25,6 +25,7 @@ import {
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { hasRequiredRole, discordUsername } = useAuth();
+  const { taskAssignmentVersion } = useEvents();
   const [showDetails, setShowDetails] = useState(false);
 
   const {
@@ -46,19 +47,34 @@ export default function EventDetails() {
     discordUsername
   );
 
-  // Set up real-time subscription for task assignments
-  useTaskAssignmentSync({
-    eventId: event?.eventId,
-    onUpdate: async () => {
-      if (!event?.eventId) return;
+  // Track if this is the initial mount to skip the first effect run
+  const isInitialMount = useRef(true);
+
+  // Reload assignments when global real-time updates occur
+  useEffect(() => {
+    // Skip on initial mount (data is already loaded by useEventDetails)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (!event?.eventId) return;
+
+    const reloadAssignments = async () => {
       try {
-        const eventAssignments = await fetchEventTaskAssignments(event.eventId);
+        const [eventAssignments, userAssignments] = await Promise.all([
+          fetchEventTaskAssignments(event.eventId),
+          fetchUserEventTaskAssignments(event.eventId),
+        ]);
         setAllAssignments(eventAssignments);
+        setAssignedTasks(new Set(userAssignments.map((a) => a.task_id)));
       } catch (error) {
         console.error('Error reloading assignments after real-time update:', error);
       }
-    },
-  });
+    };
+
+    reloadAssignments();
+  }, [taskAssignmentVersion, event?.eventId, setAllAssignments, setAssignedTasks]);
 
   if (loading) {
     return <AppLoadingScreen message={STRINGS.LOADING.LOADING_EVENT_DETAILS} />;

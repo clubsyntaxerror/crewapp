@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
+import { supabase } from '@/lib/supabase';
 import { Event, CrewTask } from '@/lib/types';
 import { STRINGS } from '@/constants/strings';
 
@@ -9,6 +10,7 @@ interface EventsContextType {
   error: string | null;
   loadingMessage: string | null;
   preloaded: boolean;
+  taskAssignmentVersion: number; // Increments on real-time updates
   loadEvents: () => Promise<void>;
   preloadData: () => Promise<void>;
   getEventById: (eventId: string) => Event | undefined;
@@ -27,6 +29,35 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [preloaded, setPreloaded] = useState(false);
   const preloadingRef = useRef(false);
+  const [taskAssignmentVersion, setTaskAssignmentVersion] = useState(0);
+
+  // Global real-time subscription for task assignments
+  useEffect(() => {
+    console.log('Setting up global task_assignments subscription');
+
+    const channel = supabase
+      .channel('task_assignments_global')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_assignments',
+        },
+        (payload) => {
+          console.log('Global real-time update received:', payload);
+          setTaskAssignmentVersion((v) => v + 1);
+        }
+      )
+      .subscribe((status) => {
+        console.log('Global subscription status:', status);
+      });
+
+    return () => {
+      console.log('Removing global task_assignments subscription');
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const loadEvents = useCallback(async () => {
     try {
@@ -111,6 +142,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         error,
         loadingMessage,
         preloaded,
+        taskAssignmentVersion,
         loadEvents,
         preloadData,
         getEventById,
