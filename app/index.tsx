@@ -114,7 +114,7 @@ export default function Index() {
             {nextEvent && (
               <View>
                 <Text style={[styles.sectionHeader, { color: colors.primary }]}>{STRINGS.HOME.NEXT_EVENT}</Text>
-                <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.textPrimary} rainbowTitle />
+                <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.primary} rainbowTitle />
               </View>
             )}
 
@@ -122,7 +122,7 @@ export default function Index() {
               <View style={styles.futureEventsSection}>
                 <Text style={[styles.sectionHeader, { color: colors.retroBlue }]}>{STRINGS.HOME.FUTURE_EVENTS}</Text>
                 {futureEvents.map((event) => (
-                  <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} accentColor={colors.secondary} />
+                  <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} accentColor={colors.secondary} titleColor={colors.textSecondary} />
                 ))}
               </View>
             )}

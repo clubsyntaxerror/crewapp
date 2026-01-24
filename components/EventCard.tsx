@@ -14,6 +14,7 @@ interface EventCardProps {
   refreshTrigger?: number;
   accentColor?: string;
   rainbowTitle?: boolean;
+  titleColor?: string;
 }
 
 export function EventCard({
@@ -21,6 +22,7 @@ export function EventCard({
   refreshTrigger,
   accentColor = colors.primary,
   rainbowTitle = false,
+  titleColor,
 }: EventCardProps) {
   const router = useRouter();
   const { hasRequiredRole } = useAuth();
@@ -52,7 +54,7 @@ export function EventCard({
     <Pressable
       style={({ pressed }) => [
         styles.card,
-        { borderLeftColor: accentColor },
+        { shadowColor: accentColor },
         pressed && styles.cardPressed,
       ]}
       onPress={handlePress}
@@ -64,7 +66,7 @@ export function EventCard({
               <RainbowText style={styles.title}>{event.title}</RainbowText>
             </View>
           ) : (
-            <Text style={styles.title}>{event.title}</Text>
+            <Text style={[styles.title, titleColor && { color: titleColor }]}>{event.title}</Text>
           )}
           <Text style={styles.date}>{startDate}</Text>
           <Text style={styles.venue}>{event.venueName}</Text>
@@ -108,18 +110,17 @@ export function EventCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 12,
+    borderRadius: 2,
     padding: 16,
     marginBottom: 12,
-    borderLeftWidth: 3,
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    // Shadow creates glow effect - color set dynamically via style prop
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 6,
   },
   cardPressed: {
-    opacity: 0.7,
+    opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
   cardContent: {

@@ -40,8 +40,8 @@ export function RainbowText({ children, style }: RainbowTextProps) {
   return (
     <View style={styles.container}>
       {characters.map((char, index) => {
-        // Spread the rainbow across the entire text length (one full cycle)
-        const colorOffset = Math.floor((index / characters.length) * numColors);
+        // Spread the rainbow across twice the text length (half spectrum visible)
+        const colorOffset = Math.floor((index / (characters.length * 2)) * numColors);
 
         // Create rotated color array with seamless wrap (first color repeated at end)
         const outputRange = Array.from({ length: numColors + 1 }, (_, i) =>
