@@ -248,20 +248,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (accessToken && refreshToken) {
           // Set loading to true while we establish the session
           setLoading(true);
+          setLoadingMessage(STRINGS.LOADING.AUTHENTICATING);
 
-          const { error: sessionError } = await supabase.auth.setSession({
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
           if (sessionError) {
             setLoading(false);
+            setLoadingMessage(null);
             console.error('Error setting session:', sessionError);
             throw sessionError;
           }
 
-          // Wait for onAuthStateChange to process the session
-          // The loading state will be set to false there after roles are fetched
+          // Manually handle the session instead of relying on onAuthStateChange
+          // This fixes Android first-launch issue where the listener doesn't fire
+          if (sessionData?.session?.user) {
+            setSession(sessionData.session);
+            setUser(sessionData.session.user);
+            setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
+
+            try {
+              const roles = await fetchUserRoles(sessionData.session.user.id);
+              setUserRoles(roles);
+              setHasRequiredRole(checkRequiredRole(roles));
+            } catch (roleError) {
+              console.error('Error fetching roles after login:', roleError);
+              // Continue without roles rather than blocking
+              setUserRoles([]);
+              setHasRequiredRole(false);
+            }
+
+            setLoadingMessage(null);
+            setLoading(false);
+          } else {
+            console.error('No session data returned after setSession');
+            setLoading(false);
+            setLoadingMessage(null);
+            throw new Error('Failed to establish session');
+          }
+
           return;
         } else {
           console.error('No tokens found in callback URL:', url);
