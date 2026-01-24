@@ -7,6 +7,7 @@ export const colors = {
   // Primary brand colors
   primary: '#ff9f0a', // Orange accent
   secondary: '#4a4a4c', // Grey accent for future events
+  retroBlue: '#00d4ff', // Bright retro cyan-blue
 
   // Discord brand
   discord: '#5865F2',

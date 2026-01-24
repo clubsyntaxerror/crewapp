@@ -113,14 +113,14 @@ export default function Index() {
           <ScrollView contentContainerStyle={styles.list}>
             {nextEvent && (
               <View>
-                <Text style={[styles.sectionHeader, { color: colors.textPrimary }]}>{STRINGS.HOME.NEXT_EVENT}</Text>
+                <Text style={[styles.sectionHeader, { color: colors.primary }]}>{STRINGS.HOME.NEXT_EVENT}</Text>
                 <EventCard event={nextEvent} refreshTrigger={statsRefreshTrigger} accentColor={colors.textPrimary} rainbowTitle />
               </View>
             )}
 
             {futureEvents && futureEvents.length > 0 && (
               <View style={styles.futureEventsSection}>
-                <Text style={[styles.sectionHeader, { color: colors.secondary }]}>{STRINGS.HOME.FUTURE_EVENTS}</Text>
+                <Text style={[styles.sectionHeader, { color: colors.retroBlue }]}>{STRINGS.HOME.FUTURE_EVENTS}</Text>
                 {futureEvents.map((event) => (
                   <EventCard key={event.eventId} event={event} refreshTrigger={statsRefreshTrigger} accentColor={colors.secondary} />
                 ))}
