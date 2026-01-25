@@ -10,10 +10,7 @@ import { useEvents } from "@/contexts/EventsContext";
 import { useEventDetails } from "@/hooks/useEventDetails";
 import { useTaskToggle } from "@/hooks/useTaskToggle";
 import { getMissingEventFields } from "@/lib/event-validation";
-import {
-  fetchEventTaskAssignments,
-  fetchUserEventTaskAssignments,
-} from "@/lib/task-assignments";
+import { fetchEventTaskAssignments } from "@/lib/task-assignments";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -41,7 +38,6 @@ export default function EventDetails() {
     crewTasks,
     assignedTasks,
     setAssignedTasks,
-    setAllAssignments,
     discordUsername,
     userRoles,
   );
@@ -49,7 +45,9 @@ export default function EventDetails() {
   // Track if this is the initial mount to skip the first effect run
   const isInitialMount = useRef(true);
 
-  // Reload assignments when global real-time updates occur
+  // Reload all assignments when real-time updates occur (to show other users' changes)
+  // We only refetch allAssignments, not assignedTasks - the user's own state is managed
+  // optimistically by useTaskToggle for instant feedback
   useEffect(() => {
     // Skip on initial mount (data is already loaded by useEventDetails)
     if (isInitialMount.current) {
@@ -59,29 +57,14 @@ export default function EventDetails() {
 
     if (!event?.eventId) return;
 
-    const reloadAssignments = async () => {
-      try {
-        const [eventAssignments, userAssignments] = await Promise.all([
-          fetchEventTaskAssignments(event.eventId),
-          fetchUserEventTaskAssignments(event.eventId),
-        ]);
-        setAllAssignments(eventAssignments);
-        setAssignedTasks(new Set(userAssignments.map((a) => a.task_id)));
-      } catch (error) {
-        console.error(
-          "Error reloading assignments after real-time update:",
-          error,
-        );
-      }
-    };
-
-    reloadAssignments();
-  }, [
-    taskAssignmentVersion,
-    event?.eventId,
-    setAllAssignments,
-    setAssignedTasks,
-  ]);
+    // Only refetch all assignments to see other users' changes
+    // Don't refetch user's own assignedTasks - trust the optimistic update
+    fetchEventTaskAssignments(event.eventId)
+      .then(setAllAssignments)
+      .catch((error) => {
+        console.error("Error reloading assignments after real-time update:", error);
+      });
+  }, [taskAssignmentVersion, event?.eventId, setAllAssignments]);
 
   if (loading) {
     return <AppLoadingScreen message={STRINGS.LOADING.LOADING_EVENT_DETAILS} />;
