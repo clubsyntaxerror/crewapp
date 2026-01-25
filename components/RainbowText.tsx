@@ -1,4 +1,3 @@
-import { colors } from '@/constants/colors';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, TextStyle, View } from 'react-native';
 
@@ -7,57 +6,67 @@ interface RainbowTextProps {
   style?: TextStyle;
 }
 
-const numColors = colors.rainbow.length;
+// Website gradient colors
+const COLORS = ['#6666ff', '#0099ff', '#00ff00', '#ff3399'];
+
+// Interpolate between two hex colors
+function lerpColor(color1: string, color2: string, t: number): string {
+  const r1 = parseInt(color1.slice(1, 3), 16);
+  const g1 = parseInt(color1.slice(3, 5), 16);
+  const b1 = parseInt(color1.slice(5, 7), 16);
+  const r2 = parseInt(color2.slice(1, 3), 16);
+  const g2 = parseInt(color2.slice(3, 5), 16);
+  const b2 = parseInt(color2.slice(5, 7), 16);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// Get color at position 0-1 along the gradient
+function getGradientColor(pos: number): string {
+  const p = ((pos % 1) + 1) % 1; // Normalize to 0-1
+  const scaledPos = p * COLORS.length;
+  const i = Math.floor(scaledPos);
+  const t = scaledPos - i;
+  return lerpColor(COLORS[i % COLORS.length], COLORS[(i + 1) % COLORS.length], t);
+}
 
 export function RainbowText({ children, style }: RainbowTextProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Use linear easing for smooth continuous animation
     const animate = () => {
       animatedValue.setValue(0);
       Animated.timing(animatedValue, {
-        toValue: numColors,
-        duration: numColors * 400,
-        easing: Easing.linear,
+        toValue: 1,
+        duration: 6000,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: false,
       }).start(({ finished }) => {
-        if (finished) {
-          animate(); // Seamlessly restart
-        }
+        if (finished) animate();
       });
     };
     animate();
-
     return () => animatedValue.stopAnimation();
   }, [animatedValue]);
 
   const characters = children.split('');
-
-  // Build input range: [0, 1, 2, ..., numColors]
-  const inputRange = Array.from({ length: numColors + 1 }, (_, i) => i);
+  const steps = 30;
+  const inputRange = Array.from({ length: steps + 1 }, (_, i) => i / steps);
 
   return (
     <View style={styles.container}>
       {characters.map((char, index) => {
-        // Spread the rainbow across twice the text length (half spectrum visible)
-        const colorOffset = Math.floor((index / (characters.length * 2)) * numColors);
+        // Each character gets unique position, spread across 25% of gradient
+        const charPhase = (index / characters.length) * 0.25;
 
-        // Create rotated color array with seamless wrap (first color repeated at end)
-        const outputRange = Array.from({ length: numColors + 1 }, (_, i) =>
-          colors.rainbow[(i + colorOffset) % numColors]
-        );
+        const outputRange = inputRange.map((t) => getGradientColor(charPhase + t));
 
-        const charColor = animatedValue.interpolate({
-          inputRange,
-          outputRange,
-        });
+        const charColor = animatedValue.interpolate({ inputRange, outputRange });
 
         return (
-          <Animated.Text
-            key={`${char}-${index}`}
-            style={[style, { color: charColor }]}
-          >
+          <Animated.Text key={`${char}-${index}`} style={[style, { color: charColor }]}>
             {char}
           </Animated.Text>
         );
