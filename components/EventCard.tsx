@@ -53,11 +53,7 @@ export function EventCard({
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        { shadowColor: accentColor },
-        pressed && styles.cardPressed,
-      ]}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={handlePress}
     >
       <View style={styles.cardContent}>
@@ -72,11 +68,20 @@ export function EventCard({
             </Text>
           )}
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={12} color={colors.textTertiary} style={styles.dateIcon} />
+            <Ionicons
+              name="calendar-outline"
+              size={12}
+              color={colors.textTertiary}
+              style={styles.dateIcon}
+            />
             <Text style={styles.date}>{startDate}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+            <Ionicons
+              name="location-outline"
+              size={12}
+              color={colors.textSecondary}
+            />
             <Text style={styles.venue}>{event.venueName}</Text>
           </View>
         </View>
@@ -85,27 +90,13 @@ export function EventCard({
           <View style={styles.statsInfo}>
             {stats.participating > 0 && (
               <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statEmoji,
-                    { textShadowColor: `${accentColor}99` },
-                  ]}
-                >
-                  💪
-                </Text>
+                <Text style={[styles.statEmoji]}>💪</Text>
                 <Text style={styles.statNumber}>{stats.participating}</Text>
               </View>
             )}
             {stats.absent > 0 && (
               <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statEmoji,
-                    { textShadowColor: `${accentColor}99` },
-                  ]}
-                >
-                  🏝️
-                </Text>
+                <Text style={[styles.statEmoji]}>🏝️</Text>
                 <Text style={styles.statNumber}>{stats.absent}</Text>
               </View>
             )}
@@ -122,10 +113,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     padding: 16,
     marginBottom: 12,
-    // Shadow creates glow effect - color set dynamically via style prop
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
     elevation: 6,
   },
   cardPressed: {
@@ -151,8 +138,6 @@ const styles = StyleSheet.create({
   },
   statEmoji: {
     fontSize: 16,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
   },
   statNumber: {
     ...microknightText.md,

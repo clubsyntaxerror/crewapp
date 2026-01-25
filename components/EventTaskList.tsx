@@ -1,19 +1,31 @@
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { microknightText } from '@/constants/typography';
-import { STRINGS } from '@/constants/strings';
-import { colors } from '@/constants/colors';
-import { COMMITMENT_EMOJIS, EMOJI_PROGRESSION, EMOJI_THRESHOLDS } from '@/constants/gameplay';
-import { getAbsentTaskId, isAbsentTask } from '@/lib/task-assignments';
-import { CrewTask } from '@/lib/types';
-import { ROLE_CONFIG } from '@/contexts/AuthContext';
+import { colors } from "@/constants/colors";
+import {
+  COMMITMENT_EMOJIS,
+  EMOJI_PROGRESSION,
+  EMOJI_THRESHOLDS,
+} from "@/constants/gameplay";
+import { STRINGS } from "@/constants/strings";
+import { microknightText } from "@/constants/typography";
+import { ROLE_CONFIG } from "@/contexts/AuthContext";
+import { getAbsentTaskId, isAbsentTask } from "@/lib/task-assignments";
+import { CrewTask } from "@/lib/types";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface EventTaskListProps {
   crewTasks: CrewTask[];
   assignedTasks: Set<string>;
   isPastEvent: boolean;
-  getUsernamesForTask: (taskId: string) => { username: string; role?: string }[];
+  getUsernamesForTask: (
+    taskId: string,
+  ) => { username: string; role?: string }[];
   onToggleTask: (taskId: string) => void;
-  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  saveStatus: "idle" | "saving" | "saved" | "error";
   saveError: string | null;
 }
 
@@ -35,34 +47,41 @@ export function EventTaskList({
     }
 
     const selectedCount = Array.from(assignedTasks).filter(
-      (taskId) => taskId !== absentTaskId
+      (taskId) => taskId !== absentTaskId,
     ).length;
 
     const totalTasks = crewTasks.length - 1;
     const isSmallList = totalTasks <= EMOJI_THRESHOLDS.SMALL_TASK_LIST_MAX;
-    const progression = isSmallList ? EMOJI_PROGRESSION.small : EMOJI_PROGRESSION.large;
+    const progression = isSmallList
+      ? EMOJI_PROGRESSION.small
+      : EMOJI_PROGRESSION.large;
 
-    const effectiveCount = isSmallList && selectedCount === totalTasks && selectedCount > 0
-      ? Infinity
-      : selectedCount;
+    const effectiveCount =
+      isSmallList && selectedCount === totalTasks && selectedCount > 0
+        ? Infinity
+        : selectedCount;
 
-    const tier = progression.find(({ min, max}) =>
-      effectiveCount >= min && effectiveCount <= max
+    const tier = progression.find(
+      ({ min, max }) => effectiveCount >= min && effectiveCount <= max,
     );
 
-    return tier?.emoji ?? '';
+    return tier?.emoji ?? "";
   };
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>
-        {isPastEvent ? STRINGS.EVENT.TASKS_TITLE_ENDED : STRINGS.EVENT.TASKS_TITLE_ACTIVE}
+        {isPastEvent
+          ? STRINGS.EVENT.TASKS_TITLE_ENDED
+          : STRINGS.EVENT.TASKS_TITLE_ACTIVE}
       </Text>
 
       {crewTasks.map((task, index) => {
         const taskIsAbsent = isAbsentTask(task, crewTasks);
         const absentTaskId = getAbsentTaskId(crewTasks);
-        const isAbsentChecked = absentTaskId ? assignedTasks.has(absentTaskId) : false;
+        const isAbsentChecked = absentTaskId
+          ? assignedTasks.has(absentTaskId)
+          : false;
         const isDisabled = isPastEvent || (!taskIsAbsent && isAbsentChecked);
         const usernames = getUsernamesForTask(task.id);
         const taskColor = rainbowColors[index % rainbowColors.length];
@@ -72,33 +91,36 @@ export function EventTaskList({
             key={task.id}
             style={[
               styles.crewTaskItem,
-              { backgroundColor: taskColor + '20' },
-              isDisabled && styles.crewTaskItemDisabled
+              { backgroundColor: taskColor + "20" },
+              isDisabled && styles.crewTaskItemDisabled,
             ]}
             onPress={() => !isDisabled && onToggleTask(task.id)}
             disabled={isDisabled}
           >
-            <View style={[
-              styles.checkbox,
-              isDisabled && styles.checkboxDisabled
-            ]}>
+            <View
+              style={[styles.checkbox, isDisabled && styles.checkboxDisabled]}
+            >
               {assignedTasks.has(task.id) && (
                 <Text style={styles.checkboxChecked}>✓</Text>
               )}
             </View>
             <View style={styles.crewTaskTextContainer}>
-              <Text style={[
-                styles.crewTaskText,
-                assignedTasks.has(task.id) && { fontWeight: '600' },
-                isDisabled && styles.crewTaskTextDisabled
-              ]}>
+              <Text
+                style={[
+                  styles.crewTaskText,
+                  assignedTasks.has(task.id) && { fontWeight: "600" },
+                  isDisabled && styles.crewTaskTextDisabled,
+                ]}
+              >
                 {task.label}
               </Text>
               {task.description && (
-                <Text style={[
-                  styles.crewTaskDescription,
-                  isDisabled && styles.crewTaskTextDisabled
-                ]}>
+                <Text
+                  style={[
+                    styles.crewTaskDescription,
+                    isDisabled && styles.crewTaskTextDisabled,
+                  ]}
+                >
                   {task.description}
                 </Text>
               )}
@@ -106,7 +128,8 @@ export function EventTaskList({
                 <Text style={styles.crewTaskUsernamesContainer}>
                   {usernames.map((user, idx) => {
                     const roleColor = user.role
-                      ? ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG]?.color
+                      ? ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG]
+                          ?.color
                       : undefined;
                     return (
                       <Text
@@ -114,10 +137,11 @@ export function EventTaskList({
                         style={[
                           styles.crewTaskUsername,
                           roleColor && { color: roleColor },
-                          isDisabled && styles.crewTaskTextDisabled
+                          isDisabled && styles.crewTaskTextDisabled,
                         ]}
                       >
-                        {user.username}{idx < usernames.length - 1 ? ', ' : ''}
+                        {user.username}
+                        {idx < usernames.length - 1 ? ", " : ""}
                       </Text>
                     );
                   })}
@@ -134,19 +158,21 @@ export function EventTaskList({
             <Text style={styles.commitmentEmoji}>{getCommitmentEmoji()}</Text>
           )}
 
-          {saveStatus === 'saving' && (
+          {saveStatus === "saving" && (
             <View style={styles.statusBadge}>
               <ActivityIndicator size="small" color={colors.textTertiary} />
               <Text style={styles.statusText}>{STRINGS.STATUS.SAVING}</Text>
             </View>
           )}
-          {saveStatus === 'saved' && (
+          {saveStatus === "saved" && (
             <View style={[styles.statusBadge, styles.statusBadgeSuccess]}>
               <Text style={styles.statusIcon}>✓</Text>
-              <Text style={[styles.statusText, styles.statusTextSuccess]}>{STRINGS.STATUS.SAVED}</Text>
+              <Text style={[styles.statusText, styles.statusTextSuccess]}>
+                {STRINGS.STATUS.SAVED}
+              </Text>
             </View>
           )}
-          {saveStatus === 'error' && (
+          {saveStatus === "error" && (
             <View style={[styles.statusBadge, styles.statusBadgeError]}>
               <Text style={styles.statusIcon}>!</Text>
               <Text style={[styles.statusText, styles.statusTextError]}>
@@ -165,18 +191,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBackground,
     padding: 20,
     marginTop: 12,
+    paddingBottom: 64,
   },
   sectionTitle: {
     ...microknightText.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textTertiary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   crewTaskItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 8,
@@ -187,12 +214,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.textSecondary,
     marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkboxChecked: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.textPrimary,
   },
   crewTaskTextContainer: {
@@ -212,7 +239,7 @@ const styles = StyleSheet.create({
   },
   crewTaskUsername: {
     ...microknightText.xs,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     color: colors.textTertiary,
   },
   crewTaskItemDisabled: {
@@ -227,28 +254,28 @@ const styles = StyleSheet.create({
   statusContainer: {
     marginTop: 12,
     minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
   commitmentEmoji: {
     fontSize: 32,
   },
   statusBadge: {
-    position: 'absolute',
+    position: "absolute",
     right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 12,
     backgroundColor: colors.modalBackground,
   },
   statusBadgeSuccess: {
-    backgroundColor: 'rgba(48, 209, 88, 0.15)',
+    backgroundColor: "rgba(48, 209, 88, 0.15)",
   },
   statusBadgeError: {
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+    backgroundColor: "rgba(255, 69, 58, 0.15)",
   },
   statusIcon: {
     ...microknightText.base,

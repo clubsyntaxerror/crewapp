@@ -1,9 +1,9 @@
-import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
-import { microknightText } from '@/constants/typography';
-import { STRINGS } from '@/constants/strings';
-import { colors } from '@/constants/colors';
-import { openMapLocation } from '@/lib/google-sheets';
-import { Event } from '@/lib/types';
+import { colors } from "@/constants/colors";
+import { STRINGS } from "@/constants/strings";
+import { microknightText } from "@/constants/typography";
+import { openMapLocation } from "@/lib/google-sheets";
+import { Event } from "@/lib/types";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface EventDetailsSectionProps {
   event: Event;
@@ -20,9 +20,13 @@ export function EventDetailsSection({ event }: EventDetailsSectionProps) {
             <Text style={styles.address}>{event.streetAddress}</Text>
             <Pressable
               style={styles.mapButton}
-              onPress={() => openMapLocation(event.streetAddress!, event.venueName)}
+              onPress={() =>
+                openMapLocation(event.streetAddress!, event.venueName)
+              }
             >
-              <Text style={styles.mapButtonText}>{STRINGS.EVENT.MAP_BUTTON}</Text>
+              <Text style={styles.mapButtonText}>
+                {STRINGS.EVENT.MAP_BUTTON}
+              </Text>
             </Pressable>
           </>
         )}
@@ -30,7 +34,9 @@ export function EventDetailsSection({ event }: EventDetailsSectionProps) {
 
       {event.description && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{STRINGS.EVENT.DESCRIPTION_TITLE}</Text>
+          <Text style={styles.sectionTitle}>
+            {STRINGS.EVENT.DESCRIPTION_TITLE}
+          </Text>
           <Text style={styles.description}>{event.description}</Text>
         </View>
       )}
@@ -49,14 +55,17 @@ export function EventDetailsSection({ event }: EventDetailsSectionProps) {
         </View>
       )}
 
-      {(event.payingGuests !== undefined || event.nonPayingGuests !== undefined) && (
+      {(event.payingGuests !== undefined ||
+        event.nonPayingGuests !== undefined) && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expected Attendance</Text>
           {event.payingGuests !== undefined && (
             <Text style={styles.info}>Paying guests: {event.payingGuests}</Text>
           )}
           {event.nonPayingGuests !== undefined && (
-            <Text style={styles.info}>Non-paying guests: {event.nonPayingGuests}</Text>
+            <Text style={styles.info}>
+              Non-paying guests: {event.nonPayingGuests}
+            </Text>
           )}
         </View>
       )}
@@ -92,15 +101,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...microknightText.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textTertiary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   venue: {
     ...microknightText.xl,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
   },
   address: {
@@ -109,17 +118,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   mapButton: {
-    backgroundColor: colors.success,
+    backgroundColor: colors.secondary,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,
     marginTop: 12,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   mapButtonText: {
     ...microknightText.base,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   description: {
     ...microknightText.md,
@@ -131,29 +140,29 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   ticketsButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.callToAction,
     padding: 16,
     margin: 20,
     marginBottom: 8,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   ticketsButtonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.facebookBlue,
     padding: 16,
     margin: 20,
     marginTop: 8,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

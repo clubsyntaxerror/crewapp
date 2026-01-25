@@ -1,27 +1,24 @@
-import { AppLoadingScreen } from '@/components/AppLoadingScreen';
-import { EventDetailsSection } from '@/components/EventDetailsSection';
-import { EventTaskList } from '@/components/EventTaskList';
-import { MissingFieldsAlert } from '@/components/MissingFieldsAlert';
-import { colors } from '@/constants/colors';
-import { STRINGS } from '@/constants/strings';
-import { microknightText } from '@/constants/typography';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEvents } from '@/contexts/EventsContext';
-import { useEventDetails } from '@/hooks/useEventDetails';
-import { useTaskToggle } from '@/hooks/useTaskToggle';
-import { getMissingEventFields } from '@/lib/event-validation';
-import { fetchEventTaskAssignments, fetchUserEventTaskAssignments } from '@/lib/task-assignments';
-import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { AppLoadingScreen } from "@/components/AppLoadingScreen";
+import { EventDetailsSection } from "@/components/EventDetailsSection";
+import { EventTaskList } from "@/components/EventTaskList";
+import { MissingFieldsAlert } from "@/components/MissingFieldsAlert";
+import { colors } from "@/constants/colors";
+import { STRINGS } from "@/constants/strings";
+import { microknightText } from "@/constants/typography";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEvents } from "@/contexts/EventsContext";
+import { useEventDetails } from "@/hooks/useEventDetails";
+import { useTaskToggle } from "@/hooks/useTaskToggle";
+import { getMissingEventFields } from "@/lib/event-validation";
 import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+  fetchEventTaskAssignments,
+  fetchUserEventTaskAssignments,
+} from "@/lib/task-assignments";
+import { Ionicons } from "@expo/vector-icons";
+import { format } from "date-fns";
+import { Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,7 +43,7 @@ export default function EventDetails() {
     setAssignedTasks,
     setAllAssignments,
     discordUsername,
-    userRoles
+    userRoles,
   );
 
   // Track if this is the initial mount to skip the first effect run
@@ -71,12 +68,20 @@ export default function EventDetails() {
         setAllAssignments(eventAssignments);
         setAssignedTasks(new Set(userAssignments.map((a) => a.task_id)));
       } catch (error) {
-        console.error('Error reloading assignments after real-time update:', error);
+        console.error(
+          "Error reloading assignments after real-time update:",
+          error,
+        );
       }
     };
 
     reloadAssignments();
-  }, [taskAssignmentVersion, event?.eventId, setAllAssignments, setAssignedTasks]);
+  }, [
+    taskAssignmentVersion,
+    event?.eventId,
+    setAllAssignments,
+    setAssignedTasks,
+  ]);
 
   if (loading) {
     return <AppLoadingScreen message={STRINGS.LOADING.LOADING_EVENT_DETAILS} />;
@@ -90,9 +95,9 @@ export default function EventDetails() {
     );
   }
 
-  const startDate = format(event.startDate, 'EEEE, MMMM dd, yyyy');
-  const startTime = format(event.startDate, 'HH:mm');
-  const endTime = format(event.endDate, 'HH:mm');
+  const startDate = format(event.startDate, "EEEE, MMMM dd, yyyy");
+  const startTime = format(event.startDate, "HH:mm");
+  const endTime = format(event.endDate, "HH:mm");
   const missingFields = getMissingEventFields(event);
   const isPastEvent = event.endDate.getTime() < Date.now();
 
@@ -101,14 +106,14 @@ export default function EventDetails() {
       <Stack.Screen
         options={{
           title: STRINGS.EVENT.HEADER_TITLE,
-          headerBackTitle: 'Events',
+          headerBackTitle: "Events",
           headerShown: true,
           headerLargeTitle: false,
           headerTitleStyle: {
-            fontFamily: 'microknight',
+            fontFamily: "microknight",
           },
           headerBackTitleStyle: {
-            fontFamily: 'microknight',
+            fontFamily: "microknight",
           },
         }}
       />
@@ -116,18 +121,45 @@ export default function EventDetails() {
         <View style={styles.header}>
           <Text style={styles.title}>{event.title}</Text>
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} style={styles.dateIcon} />
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color={colors.textSecondary}
+              style={styles.dateIcon}
+            />
             <Text style={styles.date}>{startDate}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
+            <Ionicons
+              name="time-outline"
+              size={14}
+              color={colors.textTertiary}
+            />
             <Text style={styles.time}>
               {startTime} - {endTime}
             </Text>
           </View>
         </View>
 
-        {hasRequiredRole && <MissingFieldsAlert missingFields={missingFields} />}
+        {hasRequiredRole && (
+          <MissingFieldsAlert missingFields={missingFields} />
+        )}
+
+        <Pressable
+          style={styles.detailsToggle}
+          onPress={() => setShowDetails(!showDetails)}
+        >
+          <Text style={styles.detailsToggleText}>
+            {showDetails
+              ? STRINGS.EVENT.DETAILS_HIDE
+              : STRINGS.EVENT.DETAILS_SHOW}
+          </Text>
+          <Text style={styles.detailsToggleIcon}>
+            {showDetails ? "▼" : "▶"}
+          </Text>
+        </Pressable>
+
+        {showDetails && <EventDetailsSection event={event} />}
 
         {hasRequiredRole ? (
           <EventTaskList
@@ -149,22 +181,6 @@ export default function EventDetails() {
             </View>
           </View>
         )}
-
-        {hasRequiredRole && (
-          <Pressable
-            style={styles.detailsToggle}
-            onPress={() => setShowDetails(!showDetails)}
-          >
-            <Text style={styles.detailsToggleText}>
-              {showDetails ? STRINGS.EVENT.DETAILS_HIDE : STRINGS.EVENT.DETAILS_SHOW}
-            </Text>
-            <Text style={styles.detailsToggleIcon}>
-              {showDetails ? '▼' : '▶'}
-            </Text>
-          </Pressable>
-        )}
-
-        {(showDetails || !hasRequiredRole) && <EventDetailsSection event={event} />}
       </ScrollView>
     </>
   );
@@ -174,11 +190,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingBottom: 12,
   },
   center: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: colors.background,
   },
   header: {
@@ -188,14 +205,14 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderColor,
   },
   title: {
-    ...microknightText['2xl'],
-    fontWeight: 'bold',
+    ...microknightText["2xl"],
+    fontWeight: "bold",
     marginBottom: 8,
     color: colors.textPrimary,
   },
   infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   dateIcon: {
@@ -223,20 +240,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBackground,
     padding: 16,
     marginTop: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   detailsToggleText: {
     ...microknightText.md,
-    color: colors.primary,
+    color: colors.retroBlue,
   },
   detailsToggleIcon: {
     ...microknightText.sm,
-    color: colors.primary,
+    color: colors.retroBlue,
   },
   unauthorizedContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 24,
     paddingHorizontal: 20,
   },
@@ -247,6 +264,6 @@ const styles = StyleSheet.create({
   unauthorizedText: {
     ...microknightText.base,
     color: colors.textTertiary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
