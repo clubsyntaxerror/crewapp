@@ -78,6 +78,8 @@ export const STRINGS = {
   LOADING: {
     AUTHENTICATING: "Authenticating...",
     FETCHING_ROLES: "Authorizing...",
+    FETCHING_ROLES_RETRY: (attempt: number, max: number) =>
+      `Authorizing... (retry ${attempt}/${max})`,
     LOADING_EVENTS: "Loading events...",
     LOADING_TASKS: "Loading tasks...",
     LOADING_EVENT_DETAILS: "Loading event details...",

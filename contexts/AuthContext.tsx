@@ -73,80 +73,101 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [hasRequiredRole, setHasRequiredRole] = useState(false);
 
-  // Fetch with timeout helper
-  const fetchWithTimeout = async (
-    url: string,
-    options: RequestInit,
-    timeoutMs: number = 10000,
-  ): Promise<Response> => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      return response;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+  // Promise-based timeout helper that works reliably on React Native
+  const withTimeout = <T,>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    errorMessage: string = "Request timed out",
+  ): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(errorMessage)), timeoutMs),
+      ),
+    ]);
   };
 
   // Fetch user's Discord roles from Supabase Edge Function
+  // accessToken can be passed directly to avoid getSession() race conditions on first launch
   const fetchUserRoles = async (
     userId: string,
-    retries: number = 2,
+    options: {
+      retries?: number;
+      accessToken?: string;
+      onRetry?: (attempt: number, maxAttempts: number) => void;
+    } = {},
   ): Promise<string[]> => {
-    const {
-      data: { session: currentSession },
-    } = await supabase.auth.getSession();
+    const { retries = 2, accessToken: providedToken, onRetry } = options;
 
-    if (!currentSession?.access_token) {
+    // Use provided token or fetch from session
+    let accessToken = providedToken;
+    if (!accessToken) {
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      accessToken = currentSession?.access_token;
+    }
+
+    if (!accessToken) {
       console.error("No access token available");
       return [];
     }
 
     const functionUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/get-discord-roles`;
+    const maxAttempts = retries + 1;
 
-    for (let attempt = 0; attempt <= retries; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const response = await fetchWithTimeout(
-          functionUrl,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${currentSession.access_token}`,
-              apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-            },
-            body: JSON.stringify({ userId }),
-          },
-          10000, // 10 second timeout
-        );
-
-        const responseData = await response.json();
-
-        if (!response.ok) {
-          console.error("Error fetching Discord roles:", responseData);
-          // Don't retry on auth errors (4xx)
-          if (response.status >= 400 && response.status < 500) {
-            return [];
-          }
-          throw new Error(`Server error: ${response.status}`);
+        // Notify about retry attempt
+        if (attempt > 0 && onRetry) {
+          onRetry(attempt + 1, maxAttempts);
         }
+
+        // Fetch with timeout - wraps both fetch AND json parsing
+        const responseData = await withTimeout(
+          (async () => {
+            const response = await fetch(functionUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+                apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+              },
+              body: JSON.stringify({ userId }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              // Attach status to error for handling below
+              const error = new Error(`Server error: ${response.status}`) as Error & { status: number };
+              error.status = response.status;
+              throw error;
+            }
+
+            return data;
+          })(),
+          10000, // 10 second timeout covers entire request + json parsing
+          "Request timed out",
+        );
 
         return responseData?.roles || [];
       } catch (error) {
-        const isLastAttempt = attempt === retries;
+        const isLastAttempt = attempt === maxAttempts - 1;
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        const isAborted = error instanceof Error && error.name === "AbortError";
+        const status = (error as Error & { status?: number }).status;
 
         console.error(
-          `Error fetching Discord roles (attempt ${attempt + 1}/${retries + 1}):`,
-          isAborted ? "Request timed out" : errorMessage,
+          `Error fetching Discord roles (attempt ${attempt + 1}/${maxAttempts}):`,
+          errorMessage,
         );
+
+        // Don't retry on auth errors (4xx)
+        if (status && status >= 400 && status < 500) {
+          console.warn("Auth error, not retrying");
+          return [];
+        }
 
         if (isLastAttempt) {
           console.warn("All retries exhausted, continuing without roles");
@@ -181,7 +202,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (session?.user) {
           setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
-          fetchUserRoles(session.user.id).then((roles) => {
+          fetchUserRoles(session.user.id, {
+            accessToken: session.access_token,
+            onRetry: (attempt, max) => {
+              setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max));
+            },
+          }).then((roles) => {
             setUserRoles(roles);
             setHasRequiredRole(checkRequiredRole(roles));
             setLoadingMessage(null);
@@ -206,7 +232,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (session?.user) {
         setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
-        const roles = await fetchUserRoles(session.user.id);
+        const roles = await fetchUserRoles(session.user.id, {
+          accessToken: session.access_token,
+          onRetry: (attempt, max) => {
+            setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max));
+          },
+        });
         setUserRoles(roles);
         setHasRequiredRole(checkRequiredRole(roles));
       } else {
@@ -297,7 +328,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
 
             try {
-              const roles = await fetchUserRoles(sessionData.session.user.id);
+              // Pass the access token directly to avoid getSession() race condition on first launch
+              const roles = await fetchUserRoles(sessionData.session.user.id, {
+                accessToken: sessionData.session.access_token,
+                onRetry: (attempt, max) => {
+                  setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max));
+                },
+              });
               setUserRoles(roles);
               setHasRequiredRole(checkRequiredRole(roles));
             } catch (roleError) {
