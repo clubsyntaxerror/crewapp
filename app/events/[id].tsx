@@ -11,6 +11,7 @@ import { useEventDetails } from '@/hooks/useEventDetails';
 import { useTaskToggle } from '@/hooks/useTaskToggle';
 import { getMissingEventFields } from '@/lib/event-validation';
 import { fetchEventTaskAssignments, fetchUserEventTaskAssignments } from '@/lib/task-assignments';
+import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -114,10 +115,16 @@ export default function EventDetails() {
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>{event.title}</Text>
-          <Text style={styles.date}>{startDate}</Text>
-          <Text style={styles.time}>
-            {startTime} - {endTime}
-          </Text>
+          <View style={styles.infoRow}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} style={styles.dateIcon} />
+            <Text style={styles.date}>{startDate}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
+            <Text style={styles.time}>
+              {startTime} - {endTime}
+            </Text>
+          </View>
         </View>
 
         {hasRequiredRole && <MissingFieldsAlert missingFields={missingFields} />}
@@ -185,6 +192,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     color: colors.textPrimary,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dateIcon: {
+    marginTop: -4,
   },
   date: {
     ...microknightText.lg,

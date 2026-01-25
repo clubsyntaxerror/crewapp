@@ -1,21 +1,34 @@
-import { AvatarDisplay } from '@/components/AvatarDisplay';
-import { EventCard } from '@/components/EventCard';
-import { colors } from '@/constants/colors';
-import { STRINGS } from '@/constants/strings';
-import { microknightText } from '@/constants/typography';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEvents } from '@/contexts/EventsContext';
-import { isFutureEvent, isPastEvent } from '@/lib/google-sheets';
-import { Stack, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { AvatarDisplay } from "@/components/AvatarDisplay";
+import { EventCard } from "@/components/EventCard";
+import { colors } from "@/constants/colors";
+import { STRINGS } from "@/constants/strings";
+import { microknightText } from "@/constants/typography";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEvents } from "@/contexts/EventsContext";
+import { isFutureEvent, isPastEvent } from "@/lib/google-sheets";
+import { Stack, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 
-type FilterType = 'upcoming' | 'past' | 'all';
+type FilterType = "upcoming" | "past" | "all";
 
 export default function Index() {
   const { discordUsername, discordAvatar, signOut } = useAuth();
-  const { events, loading, error, loadEvents, taskAssignmentVersion } = useEvents();
-  const [filter, setFilter] = useState<FilterType>('upcoming');
+  const { events, loading, error, loadEvents, taskAssignmentVersion } =
+    useEvents();
+  const [filter, setFilter] = useState<FilterType>("upcoming");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [focusTrigger, setFocusTrigger] = useState(0);
@@ -28,14 +41,20 @@ export default function Index() {
   }, [loadEvents]);
 
   const filteredEvents = events.filter((event) => {
-    if (filter === 'upcoming') return isFutureEvent(event);
-    if (filter === 'past') return isPastEvent(event);
+    if (filter === "upcoming") return isFutureEvent(event);
+    if (filter === "past") return isPastEvent(event);
     return true; // 'all'
   });
 
   // For upcoming events, separate next event from future events
-  const nextEvent = filter === 'upcoming' && filteredEvents.length > 0 ? filteredEvents[0] : null;
-  const futureEvents = filter === 'upcoming' && filteredEvents.length > 1 ? filteredEvents.slice(1) : null;
+  const nextEvent =
+    filter === "upcoming" && filteredEvents.length > 0
+      ? filteredEvents[0]
+      : null;
+  const futureEvents =
+    filter === "upcoming" && filteredEvents.length > 1
+      ? filteredEvents.slice(1)
+      : null;
 
   const handleFilterSelect = (selectedFilter: FilterType) => {
     setFilter(selectedFilter);
@@ -47,8 +66,11 @@ export default function Index() {
       await signOut();
       setShowUserModal(false);
     } catch (error) {
-      console.error('Logout error:', error);
-      Alert.alert(STRINGS.ERRORS.LOGOUT_FAILED_TITLE, STRINGS.ERRORS.LOGOUT_FAILED_MESSAGE);
+      console.error("Logout error:", error);
+      Alert.alert(
+        STRINGS.ERRORS.LOGOUT_FAILED_TITLE,
+        STRINGS.ERRORS.LOGOUT_FAILED_MESSAGE,
+      );
     }
   };
 
@@ -63,7 +85,7 @@ export default function Index() {
   useFocusEffect(
     useCallback(() => {
       setFocusTrigger((prev) => prev + 1);
-    }, [])
+    }, []),
   );
 
   // Combine focus trigger with global real-time version for refresh
@@ -93,43 +115,74 @@ export default function Index() {
           headerShown: true,
           headerLargeTitle: true,
           headerTitleStyle: {
-            fontFamily: 'microknight',
+            fontFamily: "microknight",
           },
           headerLargeTitleStyle: {
-            fontFamily: 'microknight',
+            fontFamily: "microknight",
           },
           headerLeft: () => (
-            <Pressable onPress={() => setShowUserModal(true)} style={styles.userButton}>
-              <AvatarDisplay avatarUrl={discordAvatar} username={discordUsername} size={32} />
+            <Pressable
+              onPress={() => setShowUserModal(true)}
+              style={styles.userButton}
+            >
+              <AvatarDisplay
+                avatarUrl={discordAvatar}
+                username={discordUsername}
+                size={32}
+              />
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable onPress={() => setShowFilterModal(true)} style={styles.menuButton}>
+            <Pressable
+              onPress={() => setShowFilterModal(true)}
+              style={styles.menuButton}
+            >
               <Text style={styles.menuButtonText}>⋯</Text>
             </Pressable>
           ),
         }}
       />
       <View style={styles.container}>
-        {filter === 'upcoming' && (nextEvent || futureEvents) ? (
+        {filter === "upcoming" && (nextEvent || futureEvents) ? (
           <ScrollView
             contentContainerStyle={styles.list}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+              />
             }
           >
             {nextEvent && (
               <View>
-                <Text style={[styles.sectionHeader, { color: colors.primary }]}>{STRINGS.HOME.NEXT_EVENT}</Text>
-                <EventCard event={nextEvent} refreshTrigger={refreshTrigger} accentColor={colors.primary} rainbowTitle />
+                <Text style={[styles.sectionHeader, { color: colors.primary }]}>
+                  {STRINGS.HOME.NEXT_EVENT}
+                </Text>
+                <EventCard
+                  event={nextEvent}
+                  refreshTrigger={refreshTrigger}
+                  accentColor={colors.primary}
+                  rainbowTitle
+                />
               </View>
             )}
 
             {futureEvents && futureEvents.length > 0 && (
               <View style={styles.futureEventsSection}>
-                <Text style={[styles.sectionHeader, { color: colors.retroBlue }]}>{STRINGS.HOME.FUTURE_EVENTS}</Text>
+                <Text
+                  style={[styles.sectionHeader, { color: colors.retroBlue }]}
+                >
+                  {STRINGS.HOME.FUTURE_EVENTS}
+                </Text>
                 {futureEvents.map((event) => (
-                  <EventCard key={event.eventId} event={event} refreshTrigger={refreshTrigger} accentColor={colors.secondary} titleColor={colors.textSecondary} />
+                  <EventCard
+                    key={event.eventId}
+                    event={event}
+                    refreshTrigger={refreshTrigger}
+                    accentColor={colors.secondary}
+                    titleColor={colors.textSecondary}
+                  />
                 ))}
               </View>
             )}
@@ -138,10 +191,16 @@ export default function Index() {
           <FlatList
             data={filteredEvents}
             keyExtractor={(item) => item.eventId}
-            renderItem={({ item }) => <EventCard event={item} refreshTrigger={refreshTrigger} />}
+            renderItem={({ item }) => (
+              <EventCard event={item} refreshTrigger={refreshTrigger} />
+            )}
             contentContainerStyle={styles.list}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+              />
             }
             ListEmptyComponent={
               <Text style={styles.empty}>{STRINGS.HOME.NO_EVENTS}</Text>
@@ -164,33 +223,43 @@ export default function Index() {
 
                 <Pressable
                   style={styles.filterOption}
-                  onPress={() => handleFilterSelect('upcoming')}
+                  onPress={() => handleFilterSelect("upcoming")}
                 >
-                  <Text style={styles.filterOptionText}>{STRINGS.FILTER.UPCOMING}</Text>
-                  {filter === 'upcoming' && <Text style={styles.checkmark}>✓</Text>}
+                  <Text style={styles.filterOptionText}>
+                    {STRINGS.FILTER.UPCOMING}
+                  </Text>
+                  {filter === "upcoming" && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
                 </Pressable>
 
                 <Pressable
                   style={styles.filterOption}
-                  onPress={() => handleFilterSelect('past')}
+                  onPress={() => handleFilterSelect("past")}
                 >
-                  <Text style={styles.filterOptionText}>{STRINGS.FILTER.PAST}</Text>
-                  {filter === 'past' && <Text style={styles.checkmark}>✓</Text>}
+                  <Text style={styles.filterOptionText}>
+                    {STRINGS.FILTER.PAST}
+                  </Text>
+                  {filter === "past" && <Text style={styles.checkmark}>✓</Text>}
                 </Pressable>
 
                 <Pressable
                   style={styles.filterOption}
-                  onPress={() => handleFilterSelect('all')}
+                  onPress={() => handleFilterSelect("all")}
                 >
-                  <Text style={styles.filterOptionText}>{STRINGS.FILTER.ALL}</Text>
-                  {filter === 'all' && <Text style={styles.checkmark}>✓</Text>}
+                  <Text style={styles.filterOptionText}>
+                    {STRINGS.FILTER.ALL}
+                  </Text>
+                  {filter === "all" && <Text style={styles.checkmark}>✓</Text>}
                 </Pressable>
 
                 <Pressable
                   style={styles.cancelButton}
                   onPress={() => setShowFilterModal(false)}
                 >
-                  <Text style={styles.cancelButtonText}>{STRINGS.FILTER.CANCEL}</Text>
+                  <Text style={styles.cancelButtonText}>
+                    {STRINGS.FILTER.CANCEL}
+                  </Text>
                 </Pressable>
               </View>
             </TouchableWithoutFeedback>
@@ -209,22 +278,29 @@ export default function Index() {
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
                 <View style={styles.userModalHeader}>
-                  <AvatarDisplay avatarUrl={discordAvatar} username={discordUsername} size={80} />
-                  <Text style={styles.userModalUsername}>{discordUsername || STRINGS.USER.FALLBACK_USERNAME}</Text>
+                  <AvatarDisplay
+                    avatarUrl={discordAvatar}
+                    username={discordUsername}
+                    size={80}
+                  />
+                  <Text style={styles.userModalUsername}>
+                    {discordUsername || STRINGS.USER.FALLBACK_USERNAME}
+                  </Text>
                 </View>
 
-                <Pressable
-                  style={styles.logoutButton}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.logoutButtonText}>{STRINGS.USER.LOGOUT}</Text>
+                <Pressable style={styles.logoutButton} onPress={handleLogout}>
+                  <Text style={styles.logoutButtonText}>
+                    {STRINGS.USER.LOGOUT}
+                  </Text>
                 </Pressable>
 
                 <Pressable
                   style={styles.cancelButton}
                   onPress={() => setShowUserModal(false)}
                 >
-                  <Text style={styles.cancelButtonText}>{STRINGS.FILTER.CANCEL}</Text>
+                  <Text style={styles.cancelButtonText}>
+                    {STRINGS.FILTER.CANCEL}
+                  </Text>
                 </Pressable>
               </View>
             </TouchableWithoutFeedback>
@@ -242,8 +318,8 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: colors.background,
   },
   userButton: {
@@ -257,7 +333,7 @@ const styles = StyleSheet.create({
   menuButtonText: {
     fontSize: 28,
     color: colors.info,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: -1,
   },
   list: {
@@ -265,10 +341,11 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     ...microknightText.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.primary,
     marginBottom: 12,
-    textTransform: 'uppercase',
+    marginLeft: 16,
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   futureEventsSection: {
@@ -276,20 +353,20 @@ const styles = StyleSheet.create({
   },
   empty: {
     ...microknightText.md,
-    textAlign: 'center',
+    textAlign: "center",
     color: colors.textTertiary,
     marginTop: 32,
   },
   error: {
     ...microknightText.md,
     color: colors.error,
-    textAlign: 'center',
+    textAlign: "center",
     padding: 16,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: colors.cardBackground,
@@ -300,16 +377,16 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
-    fontFamily: 'microknight',
+    fontFamily: "microknight",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   filterOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 20,
     backgroundColor: colors.modalBackground,
@@ -323,16 +400,16 @@ const styles = StyleSheet.create({
   checkmark: {
     fontSize: 18,
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   userModalHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
     gap: 16,
   },
   userModalUsername: {
     ...microknightText.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
   },
   logoutButton: {
@@ -340,13 +417,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: colors.discord,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
   },
   logoutButtonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   cancelButton: {
     marginTop: 8,
@@ -354,11 +431,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: colors.error,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cancelButtonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

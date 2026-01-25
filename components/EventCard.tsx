@@ -3,6 +3,7 @@ import { microknightText } from "@/constants/typography";
 import { useAuth } from "@/contexts/AuthContext";
 import { EventSignupStats, getEventSignupStats } from "@/lib/task-assignments";
 import { Event } from "@/lib/types";
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -66,10 +67,18 @@ export function EventCard({
               <RainbowText style={styles.title}>{event.title}</RainbowText>
             </View>
           ) : (
-            <Text style={[styles.title, titleColor && { color: titleColor }]}>{event.title}</Text>
+            <Text style={[styles.title, titleColor && { color: titleColor }]}>
+              {event.title}
+            </Text>
           )}
-          <Text style={styles.date}>{startDate}</Text>
-          <Text style={styles.venue}>{event.venueName}</Text>
+          <View style={styles.infoRow}>
+            <Ionicons name="calendar-outline" size={12} color={colors.textTertiary} style={styles.dateIcon} />
+            <Text style={styles.date}>{startDate}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+            <Text style={styles.venue}>{event.venueName}</Text>
+          </View>
         </View>
 
         {hasRequiredRole && stats && stats.total > 0 && (
@@ -159,10 +168,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: colors.textPrimary,
   },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  dateIcon: {
+    marginTop: -4,
+  },
   date: {
     ...microknightText.base,
     color: colors.textTertiary,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   venue: {
     ...microknightText.md,
