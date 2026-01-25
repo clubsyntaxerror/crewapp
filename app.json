@@ -4,7 +4,7 @@
     "slug": "crewapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/invader-logo.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "crewapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/invader-logo.png"
+        "foregroundImage": "./assets/images/icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
