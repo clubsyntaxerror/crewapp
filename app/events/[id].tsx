@@ -206,7 +206,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...microknightText["2xl"],
-    fontWeight: "bold",
     marginBottom: 8,
     color: colors.textPrimary,
   },

@@ -141,7 +141,6 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     ...microknightText.md,
-    fontWeight: "600",
     color: colors.textPrimary,
   },
   titleContainer: {
@@ -149,7 +148,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...microknightText.lg,
-    fontWeight: "600",
     marginBottom: 4,
     color: colors.textPrimary,
   },

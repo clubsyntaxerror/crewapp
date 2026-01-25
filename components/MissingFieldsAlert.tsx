@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { microknightText } from '@/constants/typography';
-import { STRINGS } from '@/constants/strings';
-import { colors } from '@/constants/colors';
+import { colors } from "@/constants/colors";
+import { STRINGS } from "@/constants/strings";
+import { microknightText } from "@/constants/typography";
+import { StyleSheet, Text, View } from "react-native";
 
 interface MissingField {
   label: string;
@@ -36,15 +36,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...microknightText.base,
-    fontWeight: '600',
     color: colors.textTertiary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   taskItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
   taskBullet: {

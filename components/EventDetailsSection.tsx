@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...microknightText.base,
-    fontWeight: "600",
     color: colors.textTertiary,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -109,7 +108,6 @@ const styles = StyleSheet.create({
   },
   venue: {
     ...microknightText.xl,
-    fontWeight: "600",
     color: colors.textPrimary,
   },
   address: {
@@ -128,7 +126,6 @@ const styles = StyleSheet.create({
   mapButtonText: {
     ...microknightText.base,
     color: colors.textPrimary,
-    fontWeight: "600",
   },
   description: {
     ...microknightText.md,
@@ -150,7 +147,6 @@ const styles = StyleSheet.create({
   ticketsButtonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: "600",
   },
   button: {
     backgroundColor: colors.facebookBlue,
@@ -163,6 +159,5 @@ const styles = StyleSheet.create({
   buttonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: "600",
   },
 });

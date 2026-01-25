@@ -333,7 +333,6 @@ const styles = StyleSheet.create({
   menuButtonText: {
     fontSize: 28,
     color: colors.info,
-    fontWeight: "600",
     letterSpacing: -1,
   },
   list: {
@@ -342,7 +341,6 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     ...microknightText.base,
-    fontWeight: "600",
     color: colors.primary,
     marginBottom: 12,
     marginLeft: 16,
@@ -378,7 +376,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "600",
     color: colors.textPrimary,
     fontFamily: "microknight",
     marginBottom: 20,
@@ -401,7 +398,6 @@ const styles = StyleSheet.create({
   checkmark: {
     fontSize: 18,
     color: colors.primary,
-    fontWeight: "600",
   },
   userModalHeader: {
     alignItems: "center",
@@ -410,7 +406,6 @@ const styles = StyleSheet.create({
   },
   userModalUsername: {
     ...microknightText.lg,
-    fontWeight: "600",
     color: colors.textPrimary,
   },
   logoutButton: {
@@ -424,7 +419,6 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: "600",
   },
   cancelButton: {
     marginTop: 8,
@@ -437,6 +431,5 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     ...microknightText.md,
     color: colors.textPrimary,
-    fontWeight: "600",
   },
 });

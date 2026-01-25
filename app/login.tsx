@@ -133,7 +133,6 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
     fontFamily: "freepixel",
   },
   infoText: {

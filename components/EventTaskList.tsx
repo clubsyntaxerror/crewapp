@@ -108,7 +108,6 @@ export function EventTaskList({
               <Text
                 style={[
                   styles.crewTaskText,
-                  assignedTasks.has(task.id) && { fontWeight: "600" },
                   isDisabled && styles.crewTaskTextDisabled,
                 ]}
               >
@@ -195,7 +194,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...microknightText.base,
-    fontWeight: "600",
     color: colors.textTertiary,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -219,7 +217,6 @@ const styles = StyleSheet.create({
   },
   checkboxChecked: {
     fontSize: 16,
-    fontWeight: "bold",
     color: colors.textPrimary,
   },
   crewTaskTextContainer: {
@@ -239,7 +236,6 @@ const styles = StyleSheet.create({
   },
   crewTaskUsername: {
     ...microknightText.xs,
-    fontStyle: "italic",
     color: colors.textTertiary,
   },
   crewTaskItemDisabled: {
