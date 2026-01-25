@@ -8,7 +8,7 @@ import { useEvents } from '@/contexts/EventsContext';
 import { isFutureEvent, isPastEvent } from '@/lib/google-sheets';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 
 type FilterType = 'upcoming' | 'past' | 'all';
 
@@ -19,6 +19,13 @@ export default function Index() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [focusTrigger, setFocusTrigger] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadEvents();
+    setRefreshing(false);
+  }, [loadEvents]);
 
   const filteredEvents = events.filter((event) => {
     if (filter === 'upcoming') return isFutureEvent(event);
@@ -105,7 +112,12 @@ export default function Index() {
       />
       <View style={styles.container}>
         {filter === 'upcoming' && (nextEvent || futureEvents) ? (
-          <ScrollView contentContainerStyle={styles.list}>
+          <ScrollView
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+            }
+          >
             {nextEvent && (
               <View>
                 <Text style={[styles.sectionHeader, { color: colors.primary }]}>{STRINGS.HOME.NEXT_EVENT}</Text>
@@ -128,6 +140,9 @@ export default function Index() {
             keyExtractor={(item) => item.eventId}
             renderItem={({ item }) => <EventCard event={item} refreshTrigger={refreshTrigger} />}
             contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+            }
             ListEmptyComponent={
               <Text style={styles.empty}>{STRINGS.HOME.NO_EVENTS}</Text>
             }
