@@ -24,7 +24,7 @@ import {
 
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { hasRequiredRole, discordUsername } = useAuth();
+  const { hasRequiredRole, discordUsername, userRoles } = useAuth();
   const { taskAssignmentVersion } = useEvents();
   const [showDetails, setShowDetails] = useState(false);
 
@@ -44,7 +44,8 @@ export default function EventDetails() {
     assignedTasks,
     setAssignedTasks,
     setAllAssignments,
-    discordUsername
+    discordUsername,
+    userRoles
   );
 
   // Track if this is the initial mount to skip the first effect run
@@ -126,7 +127,6 @@ export default function EventDetails() {
             crewTasks={crewTasks}
             assignedTasks={assignedTasks}
             isPastEvent={isPastEvent}
-            discordUsername={discordUsername}
             getUsernamesForTask={getUsernamesForTask}
             onToggleTask={toggleTask}
             saveStatus={saveStatus}

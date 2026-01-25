@@ -77,7 +77,7 @@ export const STRINGS = {
   // Loading screen messages
   LOADING: {
     AUTHENTICATING: "Authenticating...",
-    FETCHING_ROLES: "Checking permissions...",
+    FETCHING_ROLES: "Authorizing...",
     LOADING_EVENTS: "Loading events...",
     LOADING_TASKS: "Loading tasks...",
     LOADING_EVENT_DETAILS: "Loading event details...",

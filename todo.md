@@ -1,4 +1,4 @@
-list of usernames color-coded by crew (orange) and volunteer (yellow) just like in Discord
+✓ list of usernames color-coded by crew (orange) and volunteer (yellow) just like in Discord
 fix react native warnings about shadows by removing them everywhere
 app icon larger margins
 calendar icon for the date in eventcard
@@ -8,7 +8,7 @@ rainbow text use website algorithm
 margin events headers on homepage to have same margin as the cards (invisible)
 animated invader for loading spinners
 reload events using drag down gesture
-rounding removal and contrast increase for tasklist
+✓ rounding removal and contrast increase for tasklist
 move show event details up and use the brigth blue color
 facebook blue color for facebook button background
 website purple background color for tickets button

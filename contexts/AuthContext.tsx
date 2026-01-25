@@ -8,8 +8,13 @@ import { Platform } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Allowed Discord roles for task management
-const ALLOWED_ROLES = ['crew', 'volunteer'];
+// Allowed Discord roles for task management with their display colors
+export const ROLE_CONFIG = {
+  crew: { color: '#ff9f0a' },      // Orange
+  volunteer: { color: '#ffd60a' }, // Yellow
+} as const;
+
+const ALLOWED_ROLES = Object.keys(ROLE_CONFIG);
 
 interface DiscordUserMetadata {
   avatar?: string;

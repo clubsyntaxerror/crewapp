@@ -15,8 +15,15 @@ export function useTaskToggle(
   assignedTasks: Set<string>,
   setAssignedTasks: (tasks: Set<string>) => void,
   setAllAssignments: (assignments: TaskAssignment[]) => void,
-  discordUsername: string | null
+  discordUsername: string | null,
+  userRoles: string[] = []
 ) {
+  // Determine primary role: prefer 'crew' over 'volunteer'
+  const primaryRole = userRoles.find((r) => r.toLowerCase() === 'crew')
+    ? 'crew'
+    : userRoles.find((r) => r.toLowerCase() === 'volunteer')
+      ? 'volunteer'
+      : undefined;
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -35,7 +42,8 @@ export function useTaskToggle(
         selectedTasks,
         event.title,
         event.startDate,
-        discordUsername || undefined
+        discordUsername || undefined,
+        primaryRole
       );
 
       // Reload all assignments to update the display

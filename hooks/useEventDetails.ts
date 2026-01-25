@@ -61,12 +61,17 @@ export function useEventDetails(eventId: string | undefined) {
     loadEventDetails();
   }, [eventId, eventsLoading, getEventById, getTaskList]);
 
-  // Helper to get usernames for a specific task
-  const getUsernamesForTask = (taskId: string): string[] => {
-    const usernames = allAssignments
+  // Helper to get usernames with roles for a specific task
+  const getUsernamesForTask = (taskId: string): { username: string; role?: string }[] => {
+    const seen = new Set<string>();
+    return allAssignments
       .filter((a) => a.task_id === taskId && a.username)
-      .map((a) => a.username!);
-    return [...new Set(usernames)];
+      .filter((a) => {
+        if (seen.has(a.username!)) return false;
+        seen.add(a.username!);
+        return true;
+      })
+      .map((a) => ({ username: a.username!, role: a.role }));
   };
 
   return {

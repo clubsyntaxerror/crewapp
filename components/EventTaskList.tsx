@@ -5,13 +5,13 @@ import { colors } from '@/constants/colors';
 import { COMMITMENT_EMOJIS, EMOJI_PROGRESSION, EMOJI_THRESHOLDS } from '@/constants/gameplay';
 import { getAbsentTaskId, isAbsentTask } from '@/lib/task-assignments';
 import { CrewTask } from '@/lib/types';
+import { ROLE_CONFIG } from '@/contexts/AuthContext';
 
 interface EventTaskListProps {
   crewTasks: CrewTask[];
   assignedTasks: Set<string>;
   isPastEvent: boolean;
-  discordUsername: string | null;
-  getUsernamesForTask: (taskId: string) => string[];
+  getUsernamesForTask: (taskId: string) => { username: string; role?: string }[];
   onToggleTask: (taskId: string) => void;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   saveError: string | null;
@@ -21,7 +21,6 @@ export function EventTaskList({
   crewTasks,
   assignedTasks,
   isPastEvent,
-  discordUsername,
   getUsernamesForTask,
   onToggleTask,
   saveStatus,
@@ -105,18 +104,23 @@ export function EventTaskList({
               )}
               {usernames.length > 0 && (
                 <Text style={styles.crewTaskUsernamesContainer}>
-                  {usernames.map((username, idx) => (
-                    <Text
-                      key={idx}
-                      style={[
-                        styles.crewTaskUsername,
-                        username === discordUsername && styles.crewTaskUsernameHighlight,
-                        isDisabled && styles.crewTaskTextDisabled
-                      ]}
-                    >
-                      {username}{idx < usernames.length - 1 ? ', ' : ''}
-                    </Text>
-                  ))}
+                  {usernames.map((user, idx) => {
+                    const roleColor = user.role
+                      ? ROLE_CONFIG[user.role as keyof typeof ROLE_CONFIG]?.color
+                      : undefined;
+                    return (
+                      <Text
+                        key={idx}
+                        style={[
+                          styles.crewTaskUsername,
+                          roleColor && { color: roleColor },
+                          isDisabled && styles.crewTaskTextDisabled
+                        ]}
+                      >
+                        {user.username}{idx < usernames.length - 1 ? ', ' : ''}
+                      </Text>
+                    );
+                  })}
                 </Text>
               )}
             </View>
@@ -175,13 +179,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
     marginBottom: 8,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
     borderWidth: 2,
     borderColor: colors.textSecondary,
     marginRight: 12,
@@ -212,10 +214,6 @@ const styles = StyleSheet.create({
     ...microknightText.xs,
     fontStyle: 'italic',
     color: colors.textTertiary,
-  },
-  crewTaskUsernameHighlight: {
-    color: '#30d158',
-    fontWeight: '600',
   },
   crewTaskItemDisabled: {
     opacity: 0.4,
