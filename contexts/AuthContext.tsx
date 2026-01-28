@@ -295,6 +295,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const result = await WebBrowser.openAuthSessionAsync(
         data.url,
         redirectUrl,
+        {
+          // Keep browser in Android task switcher so users can switch to authenticator apps for 2FA
+          showInRecents: Platform.OS === "android",
+        },
       );
 
       if (result.type === "success") {
