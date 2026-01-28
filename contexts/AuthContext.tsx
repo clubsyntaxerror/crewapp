@@ -140,7 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
             if (!response.ok) {
               // Attach status to error for handling below
-              const error = new Error(`Server error: ${response.status}`) as Error & { status: number };
+              const error = new Error(
+                `Server error: ${response.status}`,
+              ) as Error & { status: number };
               error.status = response.status;
               throw error;
             }
@@ -205,7 +207,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           fetchUserRoles(session.user.id, {
             accessToken: session.access_token,
             onRetry: (attempt, max) => {
-              setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max));
+              setLoadingMessage(
+                STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max),
+              );
             },
           }).then((roles) => {
             setUserRoles(roles);
@@ -235,7 +239,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const roles = await fetchUserRoles(session.user.id, {
           accessToken: session.access_token,
           onRetry: (attempt, max) => {
-            setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max));
+            setLoadingMessage(
+              STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max),
+            );
           },
         });
         setUserRoles(roles);
@@ -261,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       provider: "discord",
       options: {
         redirectTo: redirectUrl,
-        scopes: "identify email guilds.members.read",
+        scopes: "identify",
         skipBrowserRedirect: Platform.OS !== "web",
       },
     });
@@ -332,7 +338,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               const roles = await fetchUserRoles(sessionData.session.user.id, {
                 accessToken: sessionData.session.access_token,
                 onRetry: (attempt, max) => {
-                  setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max));
+                  setLoadingMessage(
+                    STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max),
+                  );
                 },
               });
               setUserRoles(roles);
