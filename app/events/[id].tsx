@@ -1,4 +1,5 @@
 import { AppLoadingScreen } from "@/components/AppLoadingScreen";
+import { EventCard } from "@/components/EventCard";
 import { EventDetailsSection } from "@/components/EventDetailsSection";
 import { EventTaskList } from "@/components/EventTaskList";
 import { MissingFieldsAlert } from "@/components/MissingFieldsAlert";
@@ -12,8 +13,6 @@ import { canManageEvent } from "@/lib/event-access";
 import { useTaskToggle } from "@/hooks/useTaskToggle";
 import { getMissingEventFields } from "@/lib/event-validation";
 import { fetchEventTaskAssignments } from "@/lib/task-assignments";
-import { Ionicons } from "@expo/vector-icons";
-import { format } from "date-fns";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -79,9 +78,6 @@ export default function EventDetails() {
     );
   }
 
-  const startDate = format(event.startDate, "EEEE, MMMM dd, yyyy");
-  const startTime = format(event.startDate, "HH:mm");
-  const endTime = format(event.endDate, "HH:mm");
   const missingFields = getMissingEventFields(event);
   const isPastEvent = event.endDate.getTime() < Date.now();
   const canManage = canManageEvent(event.taskListName, userRoles);
@@ -103,27 +99,8 @@ export default function EventDetails() {
         }}
       />
       <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{event.title}</Text>
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="calendar-outline"
-              size={14}
-              color={colors.textSecondary}
-              style={styles.dateIcon}
-            />
-            <Text style={styles.date}>{startDate}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="time-outline"
-              size={14}
-              color={colors.textTertiary}
-            />
-            <Text style={styles.time}>
-              {startTime} - {endTime}
-            </Text>
-          </View>
+        <View style={styles.cardWrapper}>
+          <EventCard event={event} static />
         </View>
 
         {canManage && (
@@ -179,39 +156,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingBottom: 12,
   },
+  cardWrapper: {
+    padding: 16,
+    paddingBottom: 0,
+  },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.background,
-  },
-  header: {
-    backgroundColor: colors.cardBackground,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
-  },
-  title: {
-    ...microknightText["2xl"],
-    marginBottom: 8,
-    color: colors.textPrimary,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  dateIcon: {
-    marginTop: -4,
-  },
-  date: {
-    ...microknightText.lg,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  time: {
-    ...microknightText.md,
-    color: colors.textTertiary,
   },
   section: {
     backgroundColor: colors.cardBackground,

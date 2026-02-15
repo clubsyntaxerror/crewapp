@@ -17,6 +17,7 @@ interface EventCardProps {
   accentColor?: string;
   rainbowTitle?: boolean;
   titleColor?: string;
+  static?: boolean;
 }
 
 export function EventCard({
@@ -25,6 +26,7 @@ export function EventCard({
   accentColor = colors.primary,
   rainbowTitle = false,
   titleColor,
+  static: isStatic = false,
 }: EventCardProps) {
   const router = useRouter();
   const { userRoles } = useAuth();
@@ -56,8 +58,12 @@ export function EventCard({
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={handlePress}
+      style={({ pressed }) => [
+        styles.card,
+        !isStatic && pressed && styles.cardPressed,
+      ]}
+      onPress={isStatic ? undefined : handlePress}
+      disabled={isStatic}
     >
       <View style={styles.cardContent}>
         <View style={styles.mainInfo}>
