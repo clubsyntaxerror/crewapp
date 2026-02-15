@@ -31,6 +31,7 @@ export function EventCard({
   const canManage = canManageEvent(event.taskListName, userRoles);
   const [stats, setStats] = useState<EventSignupStats | null>(null);
   const startDate = format(event.startDate, "MMMM dd, yyyy");
+  const startTime = format(event.startDate, "HH:mm");
 
   useEffect(() => {
     loadStats();
@@ -73,18 +74,22 @@ export function EventCard({
             <Ionicons
               name="calendar-outline"
               size={12}
-              color={colors.textTertiary}
+              color={rainbowTitle ? colors.textSecondary : colors.textTertiary}
               style={styles.dateIcon}
             />
-            <Text style={styles.date}>{startDate}</Text>
+            <Text style={[styles.date, rainbowTitle && styles.dateHighlight]}>
+              {startDate}, {startTime}
+            </Text>
           </View>
           <View style={styles.infoRow}>
             <Ionicons
               name="location-outline"
               size={12}
-              color={colors.textSecondary}
+              color={rainbowTitle ? colors.textSecondary : colors.textTertiary}
             />
-            <Text style={styles.venue}>{event.venueName}</Text>
+            <Text style={[styles.venue, rainbowTitle && styles.venueHighlight]}>
+              {event.venueName}
+            </Text>
           </View>
         </View>
 
@@ -168,6 +173,12 @@ const styles = StyleSheet.create({
   },
   venue: {
     ...microknightText.md,
+    color: colors.textTertiary,
+  },
+  dateHighlight: {
+    color: colors.textSecondary,
+  },
+  venueHighlight: {
     color: colors.textSecondary,
   },
 });

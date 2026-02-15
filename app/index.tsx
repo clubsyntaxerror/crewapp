@@ -198,7 +198,7 @@ export default function Index() {
                     event={event}
                     refreshTrigger={refreshTrigger}
                     accentColor={colors.secondary}
-                    titleColor={colors.textSecondary}
+                    titleColor="#8ab0b8"
                   />
                 ))}
               </View>
