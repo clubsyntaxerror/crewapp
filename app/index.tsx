@@ -25,12 +25,13 @@ import {
 type FilterType = "upcoming" | "past" | "all";
 
 export default function Index() {
-  const { discordUsername, discordAvatar, signOut } = useAuth();
+  const { discordUsername, discordAvatar, signOut, deleteUserData } = useAuth();
   const { events, loading, error, loadEvents, taskAssignmentVersion } =
     useEvents();
   const [filter, setFilter] = useState<FilterType>("upcoming");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -72,6 +73,22 @@ export default function Index() {
         STRINGS.ERRORS.LOGOUT_FAILED_MESSAGE,
       );
     }
+  };
+
+  const confirmDeleteData = async () => {
+    try {
+      await deleteUserData();
+      setShowDeleteConfirm(false);
+      setShowUserModal(false);
+    } catch (error) {
+      console.error("Delete data error:", error);
+      Alert.alert("Error", "Failed to delete data. Please try again.");
+    }
+  };
+
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setShowDeleteConfirm(false);
   };
 
   // Events are preloaded after auth, only reload if not already loaded
@@ -271,37 +288,77 @@ export default function Index() {
         visible={showUserModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowUserModal(false)}
+        onRequestClose={closeUserModal}
       >
-        <TouchableWithoutFeedback onPress={() => setShowUserModal(false)}>
+        <TouchableWithoutFeedback onPress={closeUserModal}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
-                <View style={styles.userModalHeader}>
-                  <AvatarDisplay
-                    avatarUrl={discordAvatar}
-                    username={discordUsername}
-                    size={80}
-                  />
-                  <Text style={styles.userModalUsername}>
-                    {discordUsername || STRINGS.USER.FALLBACK_USERNAME}
-                  </Text>
-                </View>
+                {showDeleteConfirm ? (
+                  <>
+                    <Text style={styles.modalTitle}>
+                      {STRINGS.USER.DELETE_CONFIRM_TITLE}
+                    </Text>
+                    <Text style={styles.deleteConfirmMessage}>
+                      {STRINGS.USER.DELETE_CONFIRM_MESSAGE}
+                    </Text>
 
-                <Pressable style={styles.logoutButton} onPress={handleLogout}>
-                  <Text style={styles.logoutButtonText}>
-                    {STRINGS.USER.LOGOUT}
-                  </Text>
-                </Pressable>
+                    <Pressable
+                      style={styles.cancelButton}
+                      onPress={confirmDeleteData}
+                    >
+                      <Text style={styles.cancelButtonText}>
+                        {STRINGS.USER.DELETE_CONFIRM_BUTTON}
+                      </Text>
+                    </Pressable>
 
-                <Pressable
-                  style={styles.cancelButton}
-                  onPress={() => setShowUserModal(false)}
-                >
-                  <Text style={styles.cancelButtonText}>
-                    {STRINGS.FILTER.CANCEL}
-                  </Text>
-                </Pressable>
+                    <Pressable
+                      style={styles.deleteDataButton}
+                      onPress={() => setShowDeleteConfirm(false)}
+                    >
+                      <Text style={styles.deleteDataButtonText}>
+                        {STRINGS.USER.DELETE_CANCEL_BUTTON}
+                      </Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.userModalHeader}>
+                      <AvatarDisplay
+                        avatarUrl={discordAvatar}
+                        username={discordUsername}
+                        size={80}
+                      />
+                      <Text style={styles.userModalUsername}>
+                        {discordUsername || STRINGS.USER.FALLBACK_USERNAME}
+                      </Text>
+                    </View>
+
+                    <Pressable style={styles.logoutButton} onPress={handleLogout}>
+                      <Text style={styles.logoutButtonText}>
+                        {STRINGS.USER.LOGOUT}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={styles.deleteDataButton}
+                      onPress={() => setShowDeleteConfirm(true)}
+                    >
+                      <Text style={styles.deleteDataButtonText}>
+                        {STRINGS.USER.DELETE_DATA}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={styles.cancelButton}
+                      onPress={closeUserModal}
+                    >
+                      <Text style={styles.cancelButtonText}>
+                        {STRINGS.FILTER.CANCEL}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -420,11 +477,29 @@ const styles = StyleSheet.create({
     ...microknightText.md,
     color: colors.textPrimary,
   },
+  deleteConfirmMessage: {
+    ...microknightText.base,
+    color: colors.textTertiary,
+    textAlign: "center" as const,
+    marginBottom: 24,
+  },
+  deleteDataButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: colors.error,
+    borderRadius: 12,
+    alignItems: "center" as const,
+    marginBottom: 12,
+  },
+  deleteDataButtonText: {
+    ...microknightText.md,
+    color: colors.textPrimary,
+  },
   cancelButton: {
     marginTop: 8,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: colors.error,
+    backgroundColor: colors.modalBackground,
     borderRadius: 12,
     alignItems: "center",
   },

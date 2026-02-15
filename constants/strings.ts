@@ -28,6 +28,12 @@ export const STRINGS = {
   // User modal
   USER: {
     LOGOUT: "Logout",
+    DELETE_DATA: "Delete my data",
+    DELETE_CONFIRM_TITLE: "Delete all your data?",
+    DELETE_CONFIRM_MESSAGE:
+      "This will permanently delete your task signups and account from the app. You can always sign in again with Discord to start fresh.",
+    DELETE_CONFIRM_BUTTON: "Delete",
+    DELETE_CANCEL_BUTTON: "Cancel",
     FALLBACK_USERNAME: "Discord User",
   },
 

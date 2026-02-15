@@ -38,6 +38,7 @@ interface AuthContextType {
   discordAvatar: string | null;
   signInWithDiscord: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -51,6 +52,7 @@ const AuthContext = createContext<AuthContextType>({
   discordAvatar: null,
   signInWithDiscord: async () => {},
   signOut: async () => {},
+  deleteUserData: async () => {},
 });
 
 export const useAuth = () => {
@@ -378,6 +380,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const deleteUserData = async () => {
+    const {
+      data: { session: currentSession },
+    } = await supabase.auth.getSession();
+    const accessToken = currentSession?.access_token;
+
+    if (!accessToken) {
+      throw new Error("No active session");
+    }
+
+    const functionUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/delete-user-data`;
+    const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to delete user data");
+    }
+
+    await supabase.auth.signOut();
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -412,6 +442,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     discordAvatar,
     signInWithDiscord,
     signOut,
+    deleteUserData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
