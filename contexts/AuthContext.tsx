@@ -12,6 +12,7 @@ WebBrowser.maybeCompleteAuthSession();
 export const ROLE_CONFIG = {
   crew: { color: "#ff9f0a" }, // Orange
   volunteer: { color: "#ffd60a" }, // Yellow
+  tester: { color: "#ff9f0a" }, // Same as crew
 } as const;
 
 const ALLOWED_ROLES = Object.keys(ROLE_CONFIG);
