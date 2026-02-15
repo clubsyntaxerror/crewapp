@@ -1,6 +1,6 @@
 import { colors } from "@/constants/colors";
 import { microknightText } from "@/constants/typography";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 interface AppLoadingScreenProps {
   message?: string;
@@ -12,10 +12,10 @@ export function AppLoadingScreen({ message }: AppLoadingScreenProps) {
       <View style={styles.content}>
         <Text style={styles.title}>SYNTAX ERROR</Text>
         <Text style={styles.subtitle}>Loading</Text>
-        <ActivityIndicator
-          size="large"
-          color={colors.primary}
+        <Image
+          source={require("@/assets/images/invader-dance.gif")}
           style={styles.spinner}
+          resizeMode="contain"
         />
         {message && <Text style={styles.message}>{message}</Text>}
       </View>
@@ -48,6 +48,8 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   spinner: {
+    width: 96,
+    height: 96,
     marginBottom: 24,
   },
   message: {

@@ -52,25 +52,29 @@ export function RainbowText({ children, style }: RainbowTextProps) {
   }, [animatedValue]);
 
   const characters = children.split('');
+  const words = children.split(/(\s+)/); // Split keeping whitespace as separate entries
   const steps = 30;
   const inputRange = Array.from({ length: steps + 1 }, (_, i) => i / steps);
 
+  let charIndex = 0;
   return (
     <View style={styles.container}>
-      {characters.map((char, index) => {
-        // Each character gets unique position, spread across 25% of gradient
-        const charPhase = (index / characters.length) * 0.25;
+      {words.map((word, wordIndex) => (
+        <View key={wordIndex} style={styles.word}>
+          {word.split('').map((char) => {
+            const index = charIndex++;
+            const charPhase = (index / characters.length) * 0.25;
+            const outputRange = inputRange.map((t) => getGradientColor(charPhase + t));
+            const charColor = animatedValue.interpolate({ inputRange, outputRange });
 
-        const outputRange = inputRange.map((t) => getGradientColor(charPhase + t));
-
-        const charColor = animatedValue.interpolate({ inputRange, outputRange });
-
-        return (
-          <Animated.Text key={`${char}-${index}`} style={[style, { color: charColor }]}>
-            {char}
-          </Animated.Text>
-        );
-      })}
+            return (
+              <Animated.Text key={`${char}-${index}`} style={[style, { color: charColor }]}>
+                {char}
+              </Animated.Text>
+            );
+          })}
+        </View>
+      ))}
     </View>
   );
 }
@@ -79,5 +83,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  word: {
+    flexDirection: 'row',
   },
 });
