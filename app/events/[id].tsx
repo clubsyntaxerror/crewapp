@@ -8,6 +8,7 @@ import { microknightText } from "@/constants/typography";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/contexts/EventsContext";
 import { useEventDetails } from "@/hooks/useEventDetails";
+import { canManageEvent } from "@/lib/event-access";
 import { useTaskToggle } from "@/hooks/useTaskToggle";
 import { getMissingEventFields } from "@/lib/event-validation";
 import { fetchEventTaskAssignments } from "@/lib/task-assignments";
@@ -83,6 +84,7 @@ export default function EventDetails() {
   const endTime = format(event.endDate, "HH:mm");
   const missingFields = getMissingEventFields(event);
   const isPastEvent = event.endDate.getTime() < Date.now();
+  const canManage = canManageEvent(event.taskListName, userRoles);
 
   return (
     <>
@@ -124,7 +126,7 @@ export default function EventDetails() {
           </View>
         </View>
 
-        {hasRequiredRole && (
+        {canManage && (
           <MissingFieldsAlert missingFields={missingFields} />
         )}
 
@@ -144,7 +146,7 @@ export default function EventDetails() {
 
         {showDetails && <EventDetailsSection event={event} />}
 
-        {hasRequiredRole ? (
+        {canManage ? (
           <EventTaskList
             crewTasks={crewTasks}
             assignedTasks={assignedTasks}
@@ -159,7 +161,9 @@ export default function EventDetails() {
             <View style={styles.unauthorizedContainer}>
               <Text style={styles.unauthorizedIcon}>😊</Text>
               <Text style={styles.unauthorizedText}>
-                {STRINGS.EVENT.UNAUTHORIZED_MESSAGE}
+                {hasRequiredRole
+                  ? STRINGS.EVENT.EVENT_FULL_MESSAGE
+                  : STRINGS.EVENT.UNAUTHORIZED_MESSAGE}
               </Text>
             </View>
           </View>

@@ -1,6 +1,7 @@
 import { colors } from "@/constants/colors";
 import { microknightText } from "@/constants/typography";
 import { useAuth } from "@/contexts/AuthContext";
+import { canManageEvent } from "@/lib/event-access";
 import { EventSignupStats, getEventSignupStats } from "@/lib/task-assignments";
 import { Event } from "@/lib/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,7 +27,8 @@ export function EventCard({
   titleColor,
 }: EventCardProps) {
   const router = useRouter();
-  const { hasRequiredRole } = useAuth();
+  const { userRoles } = useAuth();
+  const canManage = canManageEvent(event.taskListName, userRoles);
   const [stats, setStats] = useState<EventSignupStats | null>(null);
   const startDate = format(event.startDate, "MMMM dd, yyyy");
 
@@ -86,7 +88,7 @@ export function EventCard({
           </View>
         </View>
 
-        {hasRequiredRole && stats && stats.total > 0 && (
+        {canManage && stats && stats.total > 0 && (
           <View style={styles.statsInfo}>
             {stats.participating > 0 && (
               <View style={styles.statItem}>

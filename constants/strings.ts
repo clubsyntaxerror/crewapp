@@ -57,6 +57,8 @@ export const STRINGS = {
     TICKETS_BUTTON: "Get Tickets",
     UNAUTHORIZED_MESSAGE:
       "Want to help out with our events? Reach out to us on Discord to learn about volunteering!",
+    EVENT_FULL_MESSAGE:
+      "This event already has all the volunteers needed. Thanks for checking!",
   },
 
   // Status messages
