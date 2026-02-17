@@ -68,6 +68,20 @@ export function EventTaskList({
     return tier?.emoji ?? "";
   };
 
+  if (crewTasks.length === 0) {
+    return (
+      <View style={styles.section}>
+        <View style={styles.skeletonTitle} />
+        {[0, 1, 2, 3].map((i) => (
+          <View key={i} style={[styles.skeletonRow, { opacity: 1 - i * 0.2 }]}>
+            <View style={styles.skeletonCheckbox} />
+            <View style={styles.skeletonText} />
+          </View>
+        ))}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>
@@ -286,5 +300,33 @@ const styles = StyleSheet.create({
   },
   statusTextError: {
     color: colors.error,
+  },
+  skeletonTitle: {
+    height: 14,
+    width: 200,
+    backgroundColor: colors.borderColor,
+    marginBottom: 8,
+    borderRadius: 2,
+  },
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.borderColor + "30",
+  },
+  skeletonCheckbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: colors.borderColor,
+    marginRight: 12,
+  },
+  skeletonText: {
+    height: 14,
+    flex: 1,
+    backgroundColor: colors.borderColor,
+    borderRadius: 2,
   },
 });

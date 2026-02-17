@@ -30,26 +30,17 @@ export function useEventDetails(eventId: string | undefined) {
         setEvent(found || null);
 
         if (found) {
-          // Load task list (cached after first fetch)
-          const tasks = await getTaskList(found.taskListName);
+          // Load task list (cached), user assignments, and all assignments in parallel
+          const [tasks] = await Promise.all([
+            getTaskList(found.taskListName),
+            fetchUserEventTaskAssignments(found.eventId)
+              .then((saved) => setAssignedTasks(new Set(saved.map((a) => a.task_id))))
+              .catch((error) => console.error('Error loading saved task assignments:', error)),
+            fetchEventTaskAssignments(found.eventId)
+              .then(setAllAssignments)
+              .catch((error) => console.error('Error loading event assignments:', error)),
+          ]);
           setCrewTasks(tasks);
-
-          // Load user's saved task assignments (from Supabase)
-          try {
-            const savedAssignments = await fetchUserEventTaskAssignments(found.eventId);
-            const savedTaskIds = new Set(savedAssignments.map((a) => a.task_id));
-            setAssignedTasks(savedTaskIds);
-          } catch (error) {
-            console.error('Error loading saved task assignments:', error);
-          }
-
-          // Load all assignments for this event to show who's doing what
-          try {
-            const eventAssignments = await fetchEventTaskAssignments(found.eventId);
-            setAllAssignments(eventAssignments);
-          } catch (error) {
-            console.error('Error loading event assignments:', error);
-          }
         }
       } catch (error) {
         console.error('Error loading event:', error);

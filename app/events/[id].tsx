@@ -1,4 +1,3 @@
-import { AppLoadingScreen } from "@/components/AppLoadingScreen";
 import { EventCard } from "@/components/EventCard";
 import { EventDetailsSection } from "@/components/EventDetailsSection";
 import { EventTaskList } from "@/components/EventTaskList";
@@ -66,11 +65,8 @@ export default function EventDetails() {
       });
   }, [taskAssignmentVersion, event?.eventId, setAllAssignments]);
 
-  if (loading) {
-    return <AppLoadingScreen steps={[{ label: STRINGS.LOADING.LOADING_EVENT_DETAILS, completed: false }]} />;
-  }
-
   if (!event) {
+    if (loading) return <View style={styles.container} />;
     return (
       <View style={styles.center}>
         <Text style={styles.error}>{STRINGS.EVENT.NOT_FOUND}</Text>
