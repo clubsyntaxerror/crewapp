@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { EventsProvider, useEvents } from '@/contexts/EventsContext';
 import { AppLoadingScreen } from '@/components/AppLoadingScreen';
+import { useNotifications } from '@/hooks/useNotifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,6 +14,9 @@ function RootLayoutNav() {
   const { loadingSteps: eventsSteps, preloaded, preloadData } = useEvents();
   const segments = useSegments();
   const router = useRouter();
+
+  // Register for push notifications once authenticated
+  useNotifications(!!session);
 
   // Trigger data preloading once authenticated
   useEffect(() => {
