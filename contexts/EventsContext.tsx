@@ -3,12 +3,13 @@ import { fetchEvents, fetchTaskList } from '@/lib/google-sheets';
 import { supabase } from '@/lib/supabase';
 import { Event, CrewTask } from '@/lib/types';
 import { STRINGS } from '@/constants/strings';
+import { LoadingStep } from '@/contexts/AuthContext';
 
 interface EventsContextType {
   events: Event[];
   loading: boolean;
   error: string | null;
-  loadingMessage: string | null;
+  loadingSteps: LoadingStep[];
   preloaded: boolean;
   taskAssignmentVersion: number; // Increments on real-time updates
   loadEvents: () => Promise<void>;
@@ -26,7 +27,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>([]);
   const [preloaded, setPreloaded] = useState(false);
   const preloadingRef = useRef(false);
   const [taskAssignmentVersion, setTaskAssignmentVersion] = useState(0);
@@ -82,14 +83,27 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      // Load events
-      setLoadingMessage(STRINGS.LOADING.LOADING_EVENTS);
-      const eventsData = await fetchEvents();
-      setEvents(eventsData);
+      // Load events and default task list in parallel
+      setLoadingSteps([
+        { label: STRINGS.LOADING.LOADING_EVENTS, completed: false },
+        { label: STRINGS.LOADING.LOADING_TASKS, completed: false },
+      ]);
 
-      // Preload the default task list (most events use this)
-      setLoadingMessage(STRINGS.LOADING.LOADING_TASKS);
-      const defaultTasks = await fetchTaskList();
+      const [eventsData, defaultTasks] = await Promise.all([
+        fetchEvents().then((data) => {
+          setLoadingSteps((prev) =>
+            prev.map((s) => s.label === STRINGS.LOADING.LOADING_EVENTS ? { ...s, completed: true } : s),
+          );
+          return data;
+        }),
+        fetchTaskList().then((data) => {
+          setLoadingSteps((prev) =>
+            prev.map((s) => s.label === STRINGS.LOADING.LOADING_TASKS ? { ...s, completed: true } : s),
+          );
+          return data;
+        }),
+      ]);
+      setEvents(eventsData);
       taskListCache.set('__default__', defaultTasks);
 
       // Also preload task lists for the first few upcoming events if they have custom lists
@@ -97,21 +111,21 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         .filter((e) => e.startDate.getTime() > Date.now())
         .slice(0, 3);
 
-      for (const event of upcomingEvents) {
-        if (event.taskListName && !taskListCache.has(event.taskListName)) {
-          const tasks = await fetchTaskList(event.taskListName);
-          taskListCache.set(event.taskListName, tasks);
-        }
-      }
+      await Promise.all(
+        upcomingEvents
+          .filter((e) => e.taskListName && !taskListCache.has(e.taskListName))
+          .map(async (e) => {
+            const tasks = await fetchTaskList(e.taskListName);
+            taskListCache.set(e.taskListName!, tasks);
+          })
+      );
 
-      setLoadingMessage(STRINGS.LOADING.ALMOST_READY);
       setPreloaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
       console.error('Error preloading data:', err);
     } finally {
       setLoading(false);
-      setLoadingMessage(null);
       preloadingRef.current = false;
     }
   }, [preloaded]);
@@ -140,7 +154,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         events,
         loading,
         error,
-        loadingMessage,
+        loadingSteps,
         preloaded,
         taskAssignmentVersion,
         loadEvents,

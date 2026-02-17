@@ -1,12 +1,13 @@
 import { colors } from "@/constants/colors";
+import { LoadingStep } from "@/contexts/AuthContext";
 import { microknightText } from "@/constants/typography";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 interface AppLoadingScreenProps {
-  message?: string;
+  steps?: LoadingStep[];
 }
 
-export function AppLoadingScreen({ message }: AppLoadingScreenProps) {
+export function AppLoadingScreen({ steps = [] }: AppLoadingScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -17,7 +18,18 @@ export function AppLoadingScreen({ message }: AppLoadingScreenProps) {
           style={styles.spinner}
           resizeMode="contain"
         />
-        {message && <Text style={styles.message}>{message}</Text>}
+        {steps.length > 0 && (
+          <View style={styles.stepList}>
+            {steps.map((step) => (
+              <Text
+                key={step.label}
+                style={[styles.step, step.completed && styles.stepCompleted]}
+              >
+                {step.completed ? "> " : "  "}{step.label}
+              </Text>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -52,10 +64,16 @@ const styles = StyleSheet.create({
     height: 96,
     marginBottom: 24,
   },
-  message: {
+  stepList: {
+    alignItems: "flex-start",
+    gap: 6,
+  },
+  step: {
     fontFamily: "freepixel",
     fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
+    color: colors.textTertiary,
+  },
+  stepCompleted: {
+    color: colors.success,
   },
 });

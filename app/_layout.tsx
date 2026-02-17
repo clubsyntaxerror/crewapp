@@ -9,17 +9,17 @@ import { AppLoadingScreen } from '@/components/AppLoadingScreen';
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { session, loading: authLoading, loadingMessage: authMessage } = useAuth();
-  const { loading: eventsLoading, loadingMessage: eventsMessage, preloaded, preloadData } = useEvents();
+  const { session, loading: authLoading, loadingSteps: authSteps } = useAuth();
+  const { loadingSteps: eventsSteps, preloaded, preloadData } = useEvents();
   const segments = useSegments();
   const router = useRouter();
 
   // Trigger data preloading once authenticated
   useEffect(() => {
-    if (session && !authLoading && !preloaded) {
+    if (session && !preloaded) {
       preloadData();
     }
-  }, [session, authLoading, preloaded, preloadData]);
+  }, [session, preloaded, preloadData]);
 
   // Handle navigation based on auth state
   useEffect(() => {
@@ -40,8 +40,7 @@ function RootLayoutNav() {
 
   // Show loading screen during auth or data preloading
   if (authLoading || (session && !preloaded)) {
-    const message = authMessage || eventsMessage;
-    return <AppLoadingScreen message={message ?? undefined} />;
+    return <AppLoadingScreen steps={[...authSteps, ...eventsSteps]} />;
   }
 
   return (

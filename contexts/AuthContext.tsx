@@ -28,11 +28,16 @@ interface DiscordUserMetadata {
   provider_id?: string;
 }
 
+export interface LoadingStep {
+  label: string;
+  completed: boolean;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  loadingMessage: string | null;
+  loadingSteps: LoadingStep[];
   hasRequiredRole: boolean;
   userRoles: string[];
   discordUsername: string | null;
@@ -46,7 +51,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   loading: true,
-  loadingMessage: null,
+  loadingSteps: [],
   hasRequiredRole: false,
   userRoles: [],
   discordUsername: null,
@@ -70,9 +75,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState<string | null>(
-    STRINGS.LOADING.AUTHENTICATING,
-  );
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>([
+    { label: STRINGS.LOADING.AUTHENTICATING, completed: false },
+  ]);
+
+  const completeStep = (label: string) => {
+    setLoadingSteps((prev) =>
+      prev.map((s) => (s.label === label ? { ...s, completed: true } : s)),
+    );
+  };
+
+  const addStep = (label: string) => {
+    setLoadingSteps((prev) => {
+      if (prev.some((s) => s.label === label)) return prev;
+      return [...prev, { label, completed: false }];
+    });
+  };
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [hasRequiredRole, setHasRequiredRole] = useState(false);
 
@@ -198,36 +216,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    setLoadingMessage(STRINGS.LOADING.AUTHENTICATING);
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
+        completeStep(STRINGS.LOADING.AUTHENTICATING);
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
+          addStep(STRINGS.LOADING.FETCHING_ROLES);
           fetchUserRoles(session.user.id, {
             accessToken: session.access_token,
             onRetry: (attempt, max) => {
-              setLoadingMessage(
-                STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max),
+              setLoadingSteps((prev) =>
+                prev.map((s) =>
+                  s.label.startsWith(STRINGS.LOADING.FETCHING_ROLES)
+                    ? { ...s, label: STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max) }
+                    : s,
+                ),
               );
             },
           }).then((roles) => {
+            completeStep(STRINGS.LOADING.FETCHING_ROLES);
+            // Also complete any retry label variant
+            setLoadingSteps((prev) =>
+              prev.map((s) =>
+                s.label.startsWith(STRINGS.LOADING.FETCHING_ROLES)
+                  ? { ...s, completed: true }
+                  : s,
+              ),
+            );
             setUserRoles(roles);
             setHasRequiredRole(checkRequiredRole(roles));
-            setLoadingMessage(null);
             setLoading(false);
           });
         } else {
-          setLoadingMessage(null);
           setLoading(false);
         }
       })
       .catch((err) => {
         console.error("Error getting initial session:", err);
-        setLoadingMessage(null);
         setLoading(false);
       });
 
@@ -238,15 +266,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
+        addStep(STRINGS.LOADING.FETCHING_ROLES);
         const roles = await fetchUserRoles(session.user.id, {
           accessToken: session.access_token,
           onRetry: (attempt, max) => {
-            setLoadingMessage(
-              STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max),
+            setLoadingSteps((prev) =>
+              prev.map((s) =>
+                s.label.startsWith(STRINGS.LOADING.FETCHING_ROLES)
+                  ? { ...s, label: STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max) }
+                  : s,
+              ),
             );
           },
         });
+        setLoadingSteps((prev) =>
+          prev.map((s) =>
+            s.label.startsWith(STRINGS.LOADING.FETCHING_ROLES)
+              ? { ...s, completed: true }
+              : s,
+          ),
+        );
         setUserRoles(roles);
         setHasRequiredRole(checkRequiredRole(roles));
       } else {
@@ -254,7 +293,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setHasRequiredRole(false);
       }
 
-      setLoadingMessage(null);
       setLoading(false);
     });
 
@@ -318,7 +356,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (accessToken && refreshToken) {
           // Set loading to true while we establish the session
           setLoading(true);
-          setLoadingMessage(STRINGS.LOADING.AUTHENTICATING);
+          setLoadingSteps([
+            { label: STRINGS.LOADING.AUTHENTICATING, completed: false },
+          ]);
 
           const { data: sessionData, error: sessionError } =
             await supabase.auth.setSession({
@@ -328,7 +368,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
           if (sessionError) {
             setLoading(false);
-            setLoadingMessage(null);
+            setLoadingSteps([]);
             console.error("Error setting session:", sessionError);
             throw sessionError;
           }
@@ -338,18 +378,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           if (sessionData?.session?.user) {
             setSession(sessionData.session);
             setUser(sessionData.session.user);
-            setLoadingMessage(STRINGS.LOADING.FETCHING_ROLES);
+            completeStep(STRINGS.LOADING.AUTHENTICATING);
+            addStep(STRINGS.LOADING.FETCHING_ROLES);
 
             try {
               // Pass the access token directly to avoid getSession() race condition on first launch
               const roles = await fetchUserRoles(sessionData.session.user.id, {
                 accessToken: sessionData.session.access_token,
                 onRetry: (attempt, max) => {
-                  setLoadingMessage(
-                    STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max),
+                  setLoadingSteps((prev) =>
+                    prev.map((s) =>
+                      s.label.startsWith(STRINGS.LOADING.FETCHING_ROLES)
+                        ? { ...s, label: STRINGS.LOADING.FETCHING_ROLES_RETRY(attempt, max) }
+                        : s,
+                    ),
                   );
                 },
               });
+              setLoadingSteps((prev) =>
+                prev.map((s) =>
+                  s.label.startsWith(STRINGS.LOADING.FETCHING_ROLES)
+                    ? { ...s, completed: true }
+                    : s,
+                ),
+              );
               setUserRoles(roles);
               setHasRequiredRole(checkRequiredRole(roles));
             } catch (roleError) {
@@ -359,12 +411,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               setHasRequiredRole(false);
             }
 
-            setLoadingMessage(null);
             setLoading(false);
           } else {
             console.error("No session data returned after setSession");
             setLoading(false);
-            setLoadingMessage(null);
+            setLoadingSteps([]);
             throw new Error("Failed to establish session");
           }
 
@@ -436,7 +487,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     session,
     user,
     loading,
-    loadingMessage,
+    loadingSteps,
     hasRequiredRole,
     userRoles,
     discordUsername,

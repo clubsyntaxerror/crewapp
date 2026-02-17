@@ -84,13 +84,12 @@ export const STRINGS = {
 
   // Loading screen messages
   LOADING: {
-    AUTHENTICATING: "Authenticating...",
-    FETCHING_ROLES: "Authorizing...",
+    AUTHENTICATING: "Authenticating",
+    FETCHING_ROLES: "Authorizing",
     FETCHING_ROLES_RETRY: (attempt: number, max: number) =>
-      `Authorizing... (retry ${attempt}/${max})`,
-    LOADING_EVENTS: "Loading events...",
-    LOADING_TASKS: "Loading tasks...",
+      `Authorizing (retry ${attempt}/${max})`,
+    LOADING_EVENTS: "Loading events",
+    LOADING_TASKS: "Loading tasks",
     LOADING_EVENT_DETAILS: "Loading event details...",
-    ALMOST_READY: "Almost ready...",
   },
 } as const;

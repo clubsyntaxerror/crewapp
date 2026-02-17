@@ -67,7 +67,7 @@ export default function EventDetails() {
   }, [taskAssignmentVersion, event?.eventId, setAllAssignments]);
 
   if (loading) {
-    return <AppLoadingScreen message={STRINGS.LOADING.LOADING_EVENT_DETAILS} />;
+    return <AppLoadingScreen steps={[{ label: STRINGS.LOADING.LOADING_EVENT_DETAILS, completed: false }]} />;
   }
 
   if (!event) {
