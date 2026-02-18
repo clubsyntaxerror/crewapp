@@ -155,12 +155,25 @@ async function sendNotificationsForEvent(
     return 0;
   }
 
-  // Check individual ticket errors (e.g. invalid token, missing FCM credentials)
+  // Check individual ticket errors and clean up stale tokens
   const tickets = pushResult.data ?? [];
-  for (const ticket of tickets) {
+  const staleTokens: string[] = [];
+  for (let i = 0; i < tickets.length; i++) {
+    const ticket = tickets[i];
     if (ticket.status === 'error') {
       console.error('Push ticket error:', ticket.message, ticket.details);
+      if (ticket.details?.error === 'DeviceNotRegistered') {
+        staleTokens.push(messages[i].to);
+      }
     }
+  }
+
+  if (staleTokens.length > 0) {
+    await supabase
+      .from('device_push_tokens')
+      .delete()
+      .in('push_token', staleTokens);
+    console.log(`Removed ${staleTokens.length} stale push token(s)`);
   }
 
   // Log sent notifications for deduplication (deduplicate by user_id)
