@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
@@ -12,12 +12,14 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export function useNotifications(session: Session | null) {
   const router = useRouter();
-  const responseListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -35,9 +37,7 @@ export function useNotifications(session: Session | null) {
     );
 
     return () => {
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
+      responseListener.current?.remove();
     };
   }, [session, router]);
 }
@@ -67,11 +67,17 @@ async function registerForPushNotifications(userId: string) {
 
   if (finalStatus !== 'granted') return;
 
-  const token = (
-    await Notifications.getExpoPushTokenAsync({
-      projectId: '9a8fe96b-cb85-42cf-8d7f-e6f9c91ec08c',
-    })
-  ).data;
+  let token: string;
+  try {
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId: '9a8fe96b-cb85-42cf-8d7f-e6f9c91ec08c',
+      })
+    ).data;
+  } catch (e: any) {
+    Alert.alert('Push Token Error', e.message ?? String(e));
+    return;
+  }
 
   const { error } = await supabase
     .from('device_push_tokens')
@@ -86,6 +92,6 @@ async function registerForPushNotifications(userId: string) {
     );
 
   if (error) {
-    console.error('Failed to store push token:', error.message);
+    Alert.alert('Push Token Store Error', error.message);
   }
 }

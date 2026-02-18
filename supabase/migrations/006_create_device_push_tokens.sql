@@ -12,4 +12,5 @@ ALTER TABLE device_push_tokens ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can manage their own tokens"
   ON device_push_tokens FOR ALL
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
