@@ -36,6 +36,9 @@ yarn-error.*
 # Google Play service account key
 google-play-service-account.json
 
+# Firebase service account keys
+*-firebase-adminsdk-*.json
+
 # typescript
 *.tsbuildinfo
 

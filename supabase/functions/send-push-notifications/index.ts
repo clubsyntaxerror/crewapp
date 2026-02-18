@@ -54,8 +54,14 @@ serve(async (req) => {
 
       // Check each notification threshold
       for (const threshold of DAYS_BEFORE_EVENT) {
-        // Use a 1-day window: send if daysUntil is within [threshold-1, threshold]
-        if (daysUntil > threshold || daysUntil < threshold - 1) continue;
+        // First threshold (14d): send anytime from 14 days out until event day
+        // Later thresholds (7d, 2d): use a 1-day window [threshold-1, threshold]
+        const isFirstThreshold = threshold === DAYS_BEFORE_EVENT[0];
+        if (isFirstThreshold) {
+          if (daysUntil > threshold || daysUntil < 0) continue;
+        } else {
+          if (daysUntil > threshold || daysUntil < threshold - 1) continue;
+        }
 
         const sent = await sendNotificationsForEvent(
           supabase,
@@ -141,10 +147,20 @@ async function sendNotificationsForEvent(
     body: JSON.stringify(messages),
   });
 
+  const pushResult = await pushResponse.json();
+  console.log('Expo Push API response:', JSON.stringify(pushResult));
+
   if (!pushResponse.ok) {
-    const error = await pushResponse.text();
-    console.error('Expo Push API error:', error);
+    console.error('Expo Push API error:', JSON.stringify(pushResult));
     return 0;
+  }
+
+  // Check individual ticket errors (e.g. invalid token, missing FCM credentials)
+  const tickets = pushResult.data ?? [];
+  for (const ticket of tickets) {
+    if (ticket.status === 'error') {
+      console.error('Push ticket error:', ticket.message, ticket.details);
+    }
   }
 
   // Log sent notifications for deduplication (deduplicate by user_id)
