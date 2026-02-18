@@ -3,7 +3,7 @@ import { EventCard } from "@/components/EventCard";
 import { colors } from "@/constants/colors";
 import { STRINGS } from "@/constants/strings";
 import { microknightText } from "@/constants/typography";
-import { useAuth } from "@/contexts/AuthContext";
+import { ROLE_CONFIG, useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/contexts/EventsContext";
 import { isFutureEvent, isPastEvent } from "@/lib/google-sheets";
 import { Stack, useFocusEffect } from "expo-router";
@@ -25,7 +25,8 @@ import {
 type FilterType = "upcoming" | "past" | "all";
 
 export default function Index() {
-  const { discordUsername, discordAvatar, signOut, deleteUserData } = useAuth();
+  const { discordUsername, discordAvatar, signOut, deleteUserData, userRoles } =
+    useAuth();
   const { events, loading, error, loadEvents, taskAssignmentVersion } =
     useEvents();
   const [filter, setFilter] = useState<FilterType>("upcoming");
@@ -332,6 +333,30 @@ export default function Index() {
                       <Text style={styles.userModalUsername}>
                         {discordUsername || STRINGS.USER.FALLBACK_USERNAME}
                       </Text>
+                      {(() => {
+                        const rolePriority = Object.keys(ROLE_CONFIG);
+                        const primaryRole = rolePriority.find((role) =>
+                          userRoles
+                            .map((r) => r.toLowerCase())
+                            .includes(role.toLowerCase()),
+                        );
+                        if (!primaryRole) return null;
+                        const config =
+                          ROLE_CONFIG[
+                            primaryRole as keyof typeof ROLE_CONFIG
+                          ];
+                        return (
+                          <Text
+                            style={[
+                              styles.userModalRole,
+                              { color: config.color },
+                            ]}
+                          >
+                            {primaryRole.charAt(0).toUpperCase() +
+                              primaryRole.slice(1)}
+                          </Text>
+                        );
+                      })()}
                     </View>
 
                     <Pressable style={styles.logoutButton} onPress={handleLogout}>
@@ -464,6 +489,10 @@ const styles = StyleSheet.create({
   userModalUsername: {
     ...microknightText.lg,
     color: colors.textPrimary,
+  },
+  userModalRole: {
+    ...microknightText.sm,
+    textTransform: "uppercase",
   },
   logoutButton: {
     paddingVertical: 16,

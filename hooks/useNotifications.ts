@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { NOTIFICATION_CONFIG } from '@/constants/notifications';
+import type { Session } from '@supabase/supabase-js';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -14,14 +15,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export function useNotifications(isAuthenticated: boolean) {
+export function useNotifications(session: Session | null) {
   const router = useRouter();
   const responseListener = useRef<Notifications.EventSubscription>();
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!session) return;
 
-    registerForPushNotifications();
+    registerForPushNotifications(session.user.id);
 
     // Handle notification taps — navigate to event
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
@@ -38,10 +39,10 @@ export function useNotifications(isAuthenticated: boolean) {
         Notifications.removeNotificationSubscription(responseListener.current);
       }
     };
-  }, [isAuthenticated, router]);
+  }, [session, router]);
 }
 
-async function registerForPushNotifications() {
+async function registerForPushNotifications(userId: string) {
   // Skip on web (requires VAPID key) and non-physical devices (emulators)
   if (Platform.OS === 'web' || !Device.isDevice) return;
 
@@ -72,19 +73,19 @@ async function registerForPushNotifications() {
     })
   ).data;
 
-  // Store token in Supabase
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase
+  const { error } = await supabase
     .from('device_push_tokens')
     .upsert(
       {
-        user_id: user.id,
+        user_id: userId,
         push_token: token,
         platform: Platform.OS,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id,push_token' }
     );
+
+  if (error) {
+    console.error('Failed to store push token:', error.message);
+  }
 }

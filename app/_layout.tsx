@@ -16,7 +16,7 @@ function RootLayoutNav() {
   const router = useRouter();
 
   // Register for push notifications once authenticated
-  useNotifications(!!session);
+  useNotifications(session);
 
   // Trigger data preloading once authenticated
   useEffect(() => {
