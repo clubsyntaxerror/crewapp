@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "963422009854",
+    "project_id": "syntax-error-events",
+    "storage_bucket": "syntax-error-events.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:963422009854:android:717bfab9081fc74c4528af",
+        "android_client_info": {
+          "package_name": "com.clubsyntaxerror.crewapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHy2tNc9Yt_sejpuX001y30zX2Sgya6ug"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
