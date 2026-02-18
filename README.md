@@ -60,5 +60,6 @@ eas submit --platform android --profile production
 
 1. Discord OAuth via Supabase
 2. Google Sheet for retreiving planned events from Syntax Google Drive
-3. Supabase Edge Function for Discord role authorization
+3. Supabase Edge Functions for Discord role authorization and push notification logic
 4. Supabase storage for crew & volunteer task management (main feature of this app)
+5. Firebase FCM for pushing notifications to Android
