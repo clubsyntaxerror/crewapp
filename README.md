@@ -5,7 +5,7 @@
 1. Install dependencies
 
    ```bash
-   npm installhttps://forms.office.com/pages/responsepage.aspx?id=aQafE7vO30K540FQCd22kJi85W0gwmxJide-l8R1-DFUQlA5NEEwQVRENTNQSjNWUUpEODNIRk1aUC4u&route=shorturl
+   npm install
    ```
 
 2. Start the app
