@@ -6,6 +6,7 @@ import { microknightText } from "@/constants/typography";
 import { ROLE_CONFIG, useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/contexts/EventsContext";
 import { isFutureEvent, isPastEvent } from "@/lib/google-sheets";
+import { differenceInDays, differenceInHours, differenceInWeeks } from "date-fns";
 import { Stack, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -15,7 +16,6 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
@@ -48,15 +48,18 @@ export default function Index() {
     return true; // 'all'
   });
 
-  // For upcoming events, separate next event from future events
-  const nextEvent =
-    filter === "upcoming" && filteredEvents.length > 0
-      ? filteredEvents[0]
-      : null;
-  const futureEvents =
-    filter === "upcoming" && filteredEvents.length > 1
-      ? filteredEvents.slice(1)
-      : null;
+  const nextUpcomingEvent = events.find(isFutureEvent);
+  const nextEventLabel = (() => {
+    if (!nextUpcomingEvent) return null;
+    const now = new Date();
+    const date = nextUpcomingEvent.startDate;
+    const hours = differenceInHours(date, now);
+    if (hours < 24) return `next event in ${hours} hour${hours !== 1 ? "s" : ""}`;
+    const days = differenceInDays(date, now);
+    if (days < 7) return `next event in ${days} day${days !== 1 ? "s" : ""}`;
+    const weeks = differenceInWeeks(date, now);
+    return `next event in ${weeks} week${weeks !== 1 ? "s" : ""}`;
+  })();
 
   const handleFilterSelect = (selectedFilter: FilterType) => {
     setFilter(selectedFilter);
@@ -161,57 +164,17 @@ export default function Index() {
         }}
       />
       <View style={styles.container}>
-        {filter === "upcoming" && (nextEvent || futureEvents) ? (
-          <ScrollView
-            contentContainerStyle={styles.list}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={colors.primary}
-              />
-            }
-          >
-            {nextEvent && (
-              <View>
-                <Text style={[styles.sectionHeader, { color: colors.primary }]}>
-                  {STRINGS.HOME.NEXT_EVENT}
-                </Text>
-                <EventCard
-                  event={nextEvent}
-                  refreshTrigger={refreshTrigger}
-                  accentColor={colors.primary}
-                  rainbowTitle
-                />
-              </View>
-            )}
-
-            {futureEvents && futureEvents.length > 0 && (
-              <View style={styles.futureEventsSection}>
-                <Text
-                  style={[styles.sectionHeader, { color: colors.retroBlue }]}
-                >
-                  {STRINGS.HOME.FUTURE_EVENTS}
-                </Text>
-                {futureEvents.map((event) => (
-                  <EventCard
-                    key={event.eventId}
-                    event={event}
-                    refreshTrigger={refreshTrigger}
-                    accentColor={colors.secondary}
-                    titleColor="#8ab0b8"
-                  />
-                ))}
-              </View>
-            )}
-          </ScrollView>
-        ) : (
-          <FlatList
+        <FlatList
             data={filteredEvents}
             keyExtractor={(item) => item.eventId}
-            renderItem={({ item }) => (
-              <EventCard event={item} refreshTrigger={refreshTrigger} />
+            renderItem={({ item, index }) => (
+              <EventCard event={item} refreshTrigger={refreshTrigger} rainbowTitle={index === 0} />
             )}
+            ListHeaderComponent={
+              nextEventLabel ? (
+                <Text style={styles.nextEventHeader}>{nextEventLabel}</Text>
+              ) : null
+            }
             contentContainerStyle={styles.list}
             refreshControl={
               <RefreshControl
@@ -224,7 +187,6 @@ export default function Index() {
               <Text style={styles.empty}>{STRINGS.HOME.NO_EVENTS}</Text>
             }
           />
-        )}
       </View>
 
       <Modal
@@ -421,16 +383,13 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 64,
   },
-  sectionHeader: {
+  nextEventHeader: {
     ...microknightText.base,
     color: colors.primary,
     marginBottom: 12,
     marginLeft: 16,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-  },
-  futureEventsSection: {
-    marginTop: 32,
   },
   empty: {
     ...microknightText.md,
