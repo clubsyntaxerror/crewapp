@@ -15,6 +15,7 @@ interface DiscordRole {
 
 interface DiscordGuildMember {
   roles: string[];
+  nick?: string;
   user: {
     id: string;
     username: string;
@@ -161,6 +162,7 @@ serve(async (req) => {
         roles: roleNames,
         discordUserId,
         username: member.user.username,
+        serverNick: member.nick ?? null,
       }),
       {
         status: 200,

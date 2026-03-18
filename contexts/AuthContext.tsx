@@ -93,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [hasRequiredRole, setHasRequiredRole] = useState(false);
+  const [serverNick, setServerNick] = useState<string | null>(null);
 
   // Promise-based timeout helper that works reliably on React Native
   const withTimeout = <T,>(
@@ -117,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       accessToken?: string;
       onRetry?: (attempt: number, maxAttempts: number) => void;
     } = {},
-  ): Promise<string[]> => {
+  ): Promise<{ roles: string[]; serverNick: string | null }> => {
     const { retries = 2, accessToken: providedToken, onRetry } = options;
 
     // Use provided token or fetch from session
@@ -131,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (!accessToken) {
       console.error("No access token available");
-      return [];
+      return { roles: [], serverNick: null };
     }
 
     const functionUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/get-discord-roles`;
@@ -174,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           "Request timed out",
         );
 
-        return responseData?.roles || [];
+        return { roles: responseData?.roles || [], serverNick: responseData?.serverNick ?? null };
       } catch (error) {
         const isLastAttempt = attempt === maxAttempts - 1;
         const errorMessage =
@@ -189,12 +190,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Don't retry on auth errors (4xx)
         if (status && status >= 400 && status < 500) {
           console.warn("Auth error, not retrying");
-          return [];
+          return { roles: [], serverNick: null };
         }
 
         if (isLastAttempt) {
           console.warn("All retries exhausted, continuing without roles");
-          return [];
+          return { roles: [], serverNick: null };
         }
 
         // Wait before retrying (exponential backoff: 1s, 2s)
@@ -204,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    return [];
+    return { roles: [], serverNick: null };
   };
 
   // Check if user has any of the required roles
@@ -236,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 ),
               );
             },
-          }).then((roles) => {
+          }).then(({ roles, serverNick: nick }) => {
             completeStep(STRINGS.LOADING.FETCHING_ROLES);
             // Also complete any retry label variant
             setLoadingSteps((prev) =>
@@ -247,6 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               ),
             );
             setUserRoles(roles);
+            setServerNick(nick);
             setHasRequiredRole(checkRequiredRole(roles));
             setLoading(false);
           });
@@ -267,7 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (session?.user) {
         addStep(STRINGS.LOADING.FETCHING_ROLES);
-        const roles = await fetchUserRoles(session.user.id, {
+        const { roles, serverNick: nick } = await fetchUserRoles(session.user.id, {
           accessToken: session.access_token,
           onRetry: (attempt, max) => {
             setLoadingSteps((prev) =>
@@ -287,9 +289,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           ),
         );
         setUserRoles(roles);
+        setServerNick(nick);
         setHasRequiredRole(checkRequiredRole(roles));
       } else {
         setUserRoles([]);
+        setServerNick(null);
         setHasRequiredRole(false);
       }
 
@@ -383,7 +387,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
             try {
               // Pass the access token directly to avoid getSession() race condition on first launch
-              const roles = await fetchUserRoles(sessionData.session.user.id, {
+              const { roles, serverNick: nick } = await fetchUserRoles(sessionData.session.user.id, {
                 accessToken: sessionData.session.access_token,
                 onRetry: (attempt, max) => {
                   setLoadingSteps((prev) =>
@@ -403,6 +407,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 ),
               );
               setUserRoles(roles);
+              setServerNick(nick);
               setHasRequiredRole(checkRequiredRole(roles));
             } catch (roleError) {
               console.error("Error fetching roles after login:", roleError);
@@ -473,6 +478,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     | DiscordUserMetadata
     | undefined;
   const discordUsername =
+    serverNick ||
     discordMetadata?.custom_claims?.global_name ||
     discordMetadata?.full_name ||
     discordMetadata?.name ||
