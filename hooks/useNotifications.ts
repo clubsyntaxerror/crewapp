@@ -79,19 +79,12 @@ async function registerForPushNotifications(userId: string) {
     return;
   }
 
-  // Replace all tokens for this user — handles token changes from reinstalls/updates
-  await supabase
-    .from('device_push_tokens')
-    .delete()
-    .eq('user_id', userId);
-
   const { error } = await supabase
     .from('device_push_tokens')
-    .insert({
-      user_id: userId,
-      push_token: token,
-      platform: Platform.OS,
-    });
+    .upsert(
+      { user_id: userId, push_token: token, platform: Platform.OS, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,push_token' }
+    );
 
   if (error) {
     Alert.alert('Push Token Store Error', error.message);
